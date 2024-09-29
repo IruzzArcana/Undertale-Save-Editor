@@ -10,6 +10,7 @@ class UndertaleCommon
     public:
         struct UndertaleSaveFile
         {
+            bool initialized;
             std::string name;
             int lv;
             int maxhp;

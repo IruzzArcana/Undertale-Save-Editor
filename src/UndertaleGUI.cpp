@@ -1,11 +1,11 @@
 #include "UndertaleGUI.hpp"
 
 bool UndertaleGUI::quit = false;
-bool UndertaleGUI::show_editor = false;
+int UndertaleGUI::current_file = 0;
 bool UndertaleGUI::show_about_page = false;
 int UndertaleGUI::show_file_dialog = FILE_NONE;
 
-void UndertaleGUI::DrawMenuBar(bool enabled, int mode)
+void UndertaleGUI::DrawMenuBar(bool enabled, UndertaleCommon::UndertaleSaveFile save[3], int mode)
 {
     if (enabled)
     {
@@ -35,9 +35,30 @@ void UndertaleGUI::DrawMenuBar(bool enabled, int mode)
             }
             if (mode == SHOW_UNDERTALE)
             {
-                if (ImGui::MenuItem("Undertale"))
+                if (ImGui::BeginMenu("Editor"))
                 {
-                    show_editor = true;
+                    if (ImGui::MenuItem("file0", 0, current_file == 0))
+                    {
+                        current_file = 0;
+                    }
+                    if (save[1].initialized && ImGui::MenuItem("file9", 0, current_file == 1))
+                    {
+                        current_file = 1;
+                    }
+                    if (save[2].initialized && ImGui::MenuItem("file8", 0, current_file == 2))
+                    {
+                        current_file = 2;
+                    }  
+                    if (ImGui::MenuItem("undertale.ini"))
+                    {
+                        // WIP
+                    }
+                    if (ImGui::MenuItem("config.ini"))
+                    {
+                        // WIP
+                    }
+
+                    ImGui::EndMenu();
                 }
             }
             if (ImGui::MenuItem("About"))
@@ -60,197 +81,195 @@ void UndertaleGUI::DrawAboutPage(bool enabled)
     }
 }
 
-void UndertaleGUI::DrawSaveEditor(bool enabled, UndertaleCommon::UndertaleSaveFile * save, bool * is_xbox)
+void UndertaleGUI::DrawSaveEditor(bool enabled, UndertaleCommon::UndertaleSaveFile *save, bool *is_xbox)
 {
     if (enabled)
     {
-
-        ImGui::SetNextWindowSize(ImVec2(600,400), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Save Editor", &show_editor, ImGuiWindowFlags_NoCollapse);
-        if (ImGui::BeginTabBar("MyTabbar"))
+        
+        std::string title = "Save Editor";
+        switch (current_file)
         {
-            if (ImGui::BeginTabItem("file0"))
+            case 0:
+                title += " - file0";
+                break;
+            case 1:
+                title += " - file9";
+                break;
+            case 2:
+                title += " - file8";
+                break;
+        }
+        
+        ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_FirstUseEver);
+        ImGui::Begin(title.c_str(), NULL, ImGuiWindowFlags_NoCollapse);
+        if (ImGui::BeginTabBar("FileTabbar"))
+        {
+            if (ImGui::BeginTabItem("General"))
             {
-                if (ImGui::BeginTabBar("FileTabbar"))
+                ImGui::InputTextWithHint("Name", "Name the fallen human.", &save->name);
+                ImGui::InputDouble("FUN", &save->flags[5]);
+                ImGui::InputInt("LOVE", &save->lv);
+                ImGui::InputInt("Kills", &save->kills);
+                ImGui::InputInt("Room", &save->currentroom);
+
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Stats"))
+            {
+                ImGui::InputInt("HP", &save->maxhp);
+                ImGui::InputInt("EXP", &save->xp);
+                ImGui::InputInt("Gold", &save->gold);
+                ImGui::InputInt("ATK", &save->at);
+                ImGui::InputInt("Weapon ATK", &save->wstrength);
+                ImGui::InputInt("Weapon", &save->weapon);
+                ImGui::InputInt("Armor", &save->armor);
+
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Inventory"))
+            {
+                for (int i = 0; i < 8; i++)
                 {
-                    if (ImGui::BeginTabItem("General"))
+                    std::string label = "Item " + std::to_string(i + 1);
+                    ImGui::InputInt(label.c_str(), &save->items[i]);
+                }
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Cellphone"))
+            {
+                bool cellphone = save->menuchoice[2];
+                ImGui::Checkbox("You have a cellphone", &cellphone);
+                save->menuchoice[2] = cellphone;
+                if (cellphone)
+                {
+                    for (int i = 0; i < 8; i++)
                     {
-                        ImGui::InputTextWithHint("Name", "Name the fallen human.", &save->name);
-                        ImGui::InputDouble("FUN", &save->flags[5]);
-                        ImGui::InputInt("LOVE", &save->lv);
-                        ImGui::InputInt("Kills", &save->kills);
-                        ImGui::InputInt("Room", &save->currentroom);
-                        
+                        std::string label = "Slot " + std::to_string(i + 1);
+                        ImGui::InputInt(label.c_str(), &save->phone[i]);
+                    }
+                }
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Areas"))
+            {
+                if (ImGui::BeginTabBar("AreaTabs"))
+                {
+                    if (ImGui::BeginTabItem("Ruins"))
+                    {
+                        ImGui::InputDouble("Kills", &save->flags[202]);
+
+                        const char *dummy_state[] = {"Initial State", "Killed", "Talked to", "Tired of your shenanigans"};
+                        static int selected_dummy = save->flags[14];
+                        selected_dummy = DrawCombo("Dummy", dummy_state, IM_ARRAYSIZE(dummy_state), selected_dummy);
+                        save->flags[14] = selected_dummy;
+
+                        const char *toriel_state[] = {"Initial State", "In basement", "Fled from", "Killed", "Spared"};
+                        static int toriel_index[IM_ARRAYSIZE(toriel_state)] = {0, 1, 3, 4, 5};
+                        static int selected_toriel = save->flags[45];
+                        selected_toriel = DrawCombo("Toriel", toriel_state, IM_ARRAYSIZE(toriel_state), selected_toriel, toriel_index, IM_ARRAYSIZE(toriel_index));
+                        save->flags[45] = selected_toriel;
+
                         ImGui::EndTabItem();
                     }
-                    if (ImGui::BeginTabItem("Stats"))
+                    if (ImGui::BeginTabItem("Snowdin"))
                     {
-                        ImGui::InputInt("HP", &save->maxhp);
-                        ImGui::InputInt("EXP", &save->xp);
-                        ImGui::InputInt("Gold", &save->gold);
-                        ImGui::InputInt("ATK", &save->at);
-                        ImGui::InputInt("Weapon ATK", &save->wstrength);
-                        ImGui::InputInt("Weapon", &save->weapon);
-                        ImGui::InputInt("Armor", &save->armor);
+                        ImGui::InputDouble("Kills", &save->flags[203]);
+
+                        const char *doggo_state[] = {"Initial State", "Killed", "Played fetch (Spared)"};
+                        static int selected_doggo = save->flags[53];
+                        selected_doggo = DrawCombo("Doggo", doggo_state, IM_ARRAYSIZE(doggo_state), selected_doggo);
+                        save->flags[53] = selected_doggo;
+
+                        const char *dogi_state[] = {"Initial State", "Killed", "Played fetch (Spared)"};
+                        static int selected_dogi = save->flags[54];
+                        selected_dogi = DrawCombo("Dogamy and Dogaressa", dogi_state, IM_ARRAYSIZE(dogi_state), selected_dogi);
+                        save->flags[54] = selected_dogi;
+
+                        const char *comedian_state[] = {"Initial State", "Laughed at joke [Yellow Credits]", "Killed"};
+                        static int selected_comedian = save->flags[57];
+                        selected_comedian = DrawCombo("Snowdrake", comedian_state, IM_ARRAYSIZE(comedian_state), selected_comedian);
+                        save->flags[57] = selected_comedian;
+
+                        const char *papyrus_state[] = {"Lost to thrice", "Lost to twice", "Lost to once", "Initial State", "Killed"};
+                        static int papyrus_index[IM_ARRAYSIZE(papyrus_state)] = {-3, -2, -1, 0, 1};
+                        static int selected_papyrus = save->flags[67];
+                        selected_papyrus = DrawCombo("Papyrus", papyrus_state, IM_ARRAYSIZE(papyrus_state), selected_papyrus, papyrus_index, IM_ARRAYSIZE(papyrus_index));
+                        save->flags[67] = selected_papyrus;
 
                         ImGui::EndTabItem();
                     }
-                    if (ImGui::BeginTabItem("Inventory"))
+                    if (ImGui::BeginTabItem("Waterfall"))
                     {
-                        for (int i = 0; i < 8; i++)
-                        {
-                            std::string label = "Item " + std::to_string(i + 1);
-                            ImGui::InputInt(label.c_str(), &save->items[i]);
-                        }
+                        ImGui::InputDouble("Kills", &save->flags[204]);
+
+                        const char *shyren_state[] = {"Initial State", "Killed", "Continued humming [Yellow credit]"};
+                        static int selected_shyren = save->flags[81];
+                        selected_shyren = DrawCombo("Shyren", shyren_state, IM_ARRAYSIZE(shyren_state), selected_shyren);
+                        save->flags[81] = selected_shyren;
+
+                        const char *maddummy_state[] = {"Initial State", "Killed"};
+                        static int selected_maddummy = save->flags[252];
+                        selected_maddummy = DrawCombo("Mad Dummy", maddummy_state, IM_ARRAYSIZE(maddummy_state), selected_maddummy);
+                        save->flags[252] = selected_maddummy;
+
+                        const char *undyne_state[] = {"Initial State", "Killed", "Sick"};
+                        static int selected_undyne = save->flags[350];
+                        selected_undyne = DrawCombo("Undyne", undyne_state, IM_ARRAYSIZE(undyne_state), selected_undyne);
+                        save->flags[350] = selected_undyne;
+
+                        const char *undying_state[] = {"Initial State", "Killed"};
+                        static int selected_undying = save->flags[251];
+                        selected_undying = DrawCombo("Undyne the Undying", undying_state, IM_ARRAYSIZE(undying_state), selected_undying);
+                        save->flags[251] = selected_undying;
+
                         ImGui::EndTabItem();
                     }
-                    if (ImGui::BeginTabItem("Cellphone"))
+                    if (ImGui::BeginTabItem("Hotland"))
                     {
-                        bool cellphone = save->menuchoice[2];
-                        ImGui::Checkbox("You have a cellphone", &cellphone);
-                        save->menuchoice[2] = cellphone;
-                        if (cellphone)
-                        {
-                            for (int i = 0; i < 8; i++)
-                            {
-                                std::string label = "Slot " + std::to_string(i + 1);
-                                ImGui::InputInt(label.c_str(), &save->phone[i]);
-                            }
-                        }
-                        ImGui::EndTabItem();
-                    }
-                    if (ImGui::BeginTabItem("Areas"))
-                    {
-                        if (ImGui::BeginTabBar("AreaTabs"))
-                        {
-                            if (ImGui::BeginTabItem("Ruins"))
-                            {
-                                ImGui::InputDouble("Kills", &save->flags[202]);
-                                
-                                const char * dummy_state[] = {"Initial State", "Killed", "Talked to", "Tired of your shenanigans"};
-                                static int selected_dummy = save->flags[14];
-                                selected_dummy = DrawCombo("Dummy", dummy_state, IM_ARRAYSIZE(dummy_state), selected_dummy);
-                                save->flags[14] = selected_dummy;
+                        ImGui::InputDouble("Kills", &save->flags[205]);
 
-                                const char * toriel_state[] = {"Initial State", "In basement", "Fled from", "Killed", "Spared"};
-                                static int toriel_index[IM_ARRAYSIZE(toriel_state)] = {0, 1, 3, 4, 5};
-                                static int selected_toriel = save->flags[45];
-                                selected_toriel = DrawCombo("Toriel", toriel_state, IM_ARRAYSIZE(toriel_state), selected_toriel, toriel_index, IM_ARRAYSIZE(toriel_index));
-                                save->flags[45] = selected_toriel;
-                                
-                                ImGui::EndTabItem();
-                            }
-                            if (ImGui::BeginTabItem("Snowdin"))
-                            {
-                                ImGui::InputDouble("Kills", &save->flags[203]);
+                        const char *state[] = {"Initial State", "Killed"};
 
-                                const char * doggo_state[] = {"Initial State", "Killed", "Played fetch (Spared)"};
-                                static int selected_doggo = save->flags[53];
-                                selected_doggo = DrawCombo("Doggo", doggo_state, IM_ARRAYSIZE(doggo_state), selected_doggo);
-                                save->flags[53] = selected_doggo;
+                        static int selected_guards = save->flags[402];
+                        selected_guards = DrawCombo("RG01 & RG02", state, IM_ARRAYSIZE(state), selected_guards);
+                        save->flags[402] = selected_guards;
 
-                                const char * dogi_state[] = {"Initial State", "Killed", "Played fetch (Spared)"};
-                                static int selected_dogi = save->flags[54];
-                                selected_dogi = DrawCombo("Dogamy and Dogaressa", dogi_state, IM_ARRAYSIZE(dogi_state), selected_dogi);
-                                save->flags[54] = selected_dogi;
+                        static int selected_muffet = save->flags[397];
+                        selected_muffet = DrawCombo("Muffet", state, IM_ARRAYSIZE(state), selected_muffet);
+                        save->flags[397] = selected_muffet;
 
-                                const char * comedian_state[] = {"Initial State", "Laughed at joke [Yellow Credits]", "Killed"};
-                                static int selected_comedian = save->flags[57];
-                                selected_comedian = DrawCombo("Snowdrake", comedian_state, IM_ARRAYSIZE(comedian_state), selected_comedian);
-                                save->flags[57] = selected_comedian;
+                        static int selected_mettaton = save->flags[425];
+                        selected_mettaton = DrawCombo("Mettaton", state, IM_ARRAYSIZE(state), selected_mettaton);
+                        save->flags[425] = selected_mettaton;
 
-                                const char * papyrus_state[] = {"Lost to thrice", "Lost to twice", "Lost to once", "Initial State", "Killed"};
-                                static int papyrus_index[IM_ARRAYSIZE(papyrus_state)] = {-3, -2, -1, 0, 1};
-                                static int selected_papyrus = save->flags[67];
-                                selected_papyrus = DrawCombo("Papyrus", papyrus_state, IM_ARRAYSIZE(papyrus_state), selected_papyrus, papyrus_index, IM_ARRAYSIZE(papyrus_index));
-                                save->flags[67] = selected_papyrus;
-
-                                ImGui::EndTabItem();
-                            }
-                            if (ImGui::BeginTabItem("Waterfall"))
-                            {
-                                ImGui::InputDouble("Kills", &save->flags[204]);
-
-                                const char * shyren_state[] = {"Initial State", "Killed", "Continued humming [Yellow credit]"};
-                                static int selected_shyren = save->flags[81];
-                                selected_shyren = DrawCombo("Shyren", shyren_state, IM_ARRAYSIZE(shyren_state), selected_shyren);
-                                save->flags[81] = selected_shyren;
-
-                                const char * maddummy_state[] = {"Initial State", "Killed"};
-                                static int selected_maddummy = save->flags[252];
-                                selected_maddummy = DrawCombo("Mad Dummy", maddummy_state, IM_ARRAYSIZE(maddummy_state), selected_maddummy);
-                                save->flags[252] = selected_maddummy;
-
-                                const char * undyne_state[] = {"Initial State", "Killed", "Sick"};
-                                static int selected_undyne = save->flags[350];
-                                selected_undyne = DrawCombo("Undyne", undyne_state, IM_ARRAYSIZE(undyne_state), selected_undyne);
-                                save->flags[350] = selected_undyne;
-
-                                const char * undying_state[] = {"Initial State", "Killed"};
-                                static int selected_undying = save->flags[251];
-                                selected_undying = DrawCombo("Undyne the Undying", undying_state, IM_ARRAYSIZE(undying_state), selected_undying);
-                                save->flags[251] = selected_undying;         
-
-                                ImGui::EndTabItem();
-                            }
-                            if (ImGui::BeginTabItem("Hotland"))
-                            {
-                                ImGui::InputDouble("Kills", &save->flags[205]);
-
-                                const char * state[] = {"Initial State", "Killed"};
-                                
-                                static int selected_guards = save->flags[402];
-                                selected_guards = DrawCombo("RG01 & RG02", state, IM_ARRAYSIZE(state), selected_guards);
-                                save->flags[402] = selected_guards;      
-
-                                static int selected_muffet = save->flags[397];
-                                selected_muffet = DrawCombo("Muffet", state, IM_ARRAYSIZE(state), selected_muffet);
-                                save->flags[397] = selected_muffet;      
-
-                                static int selected_mettaton = save->flags[425];
-                                selected_mettaton = DrawCombo("Mettaton", state, IM_ARRAYSIZE(state), selected_mettaton);
-                                save->flags[425] = selected_mettaton;
-
-                                ImGui::EndTabItem();
-                            }
-                            ImGui::EndTabBar();
-                        }
-                        ImGui::EndTabItem();
-                    }
-                    if (ImGui::BeginTabItem("Other"))
-                    {
-                        bool epilogue = (save->flags[7] == 1);
-                        ImGui::Checkbox("True Pacifist", &epilogue);
-                        save->flags[7] = epilogue;
-                        ImGui::InputDouble("Pacifist progression", &save->flags[493]);
-                        if (is_xbox)
-                        {
-                            
-                            ImGui::InputInt("Xbox Disconnect Count", &save->xbox_disconnect_counter);
-                            ImGui::InputInt("Xbox Coins Donated", &save->xbox_coins_donated);
-                            save->flags[299] = save->xbox_coins_donated;
-                        }
-                        ImGui::EndTabItem();
-                    }
-                    if (ImGui::BeginTabItem("Flags"))
-                    {
-                        for (int i = 0; i < 512; i++)
-                        {
-                            std::string label = "Flag " + std::to_string(i);
-                            ImGui::InputDouble(label.c_str(), &save->flags[i]);
-                        }
                         ImGui::EndTabItem();
                     }
                     ImGui::EndTabBar();
                 }
                 ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem("Undertale.ini"))
+            if (ImGui::BeginTabItem("Other"))
             {
+                bool epilogue = (save->flags[7] == 1);
+                ImGui::Checkbox("True Pacifist", &epilogue);
+                save->flags[7] = epilogue;
+                ImGui::InputDouble("Pacifist progression", &save->flags[493]);
+                if (is_xbox)
+                {
+
+                    ImGui::InputInt("Xbox Disconnect Count", &save->xbox_disconnect_counter);
+                    ImGui::InputInt("Xbox Coins Donated", &save->xbox_coins_donated);
+                    save->flags[299] = save->xbox_coins_donated;
+                }
                 ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem("config.ini"))
+            if (ImGui::BeginTabItem("Flags"))
             {
+                for (int i = 0; i < 512; i++)
+                {
+                    std::string label = "Flag " + std::to_string(i);
+                    ImGui::InputDouble(label.c_str(), &save->flags[i]);
+                }
                 ImGui::EndTabItem();
             }
             ImGui::EndTabBar();
@@ -261,7 +280,7 @@ void UndertaleGUI::DrawSaveEditor(bool enabled, UndertaleCommon::UndertaleSaveFi
 }
 
 // kill me
-int UndertaleGUI::DrawCombo(const char * label, const char * state[], int size, int selected_state, int index_override[], int index_size)
+int UndertaleGUI::DrawCombo(const char *label, const char *state[], int size, int selected_state, int index_override[], int index_size)
 {
     int selected = selected_state;
     if (index_size > 0)

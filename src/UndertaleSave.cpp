@@ -1,113 +1,209 @@
 #include "UndertaleSave.hpp"
 
-const char * UndertaleSave::path;
+std::string UndertaleSave::dir;
 
-using namespace std;
-
-void UndertaleSave::Load(SDL_Window * window, UndertaleCommon::UndertaleSaveFile * save, bool * is_xbox)
+void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], bool *is_xbox)
 {
-    path = tinyfd_openFileDialog("Select a Save File", "", 0, NULL, "all files", 0);
-    if (path)
+    bool is_json = false;
+    NFD::Guard nfdGuard;
+    NFD::UniquePath outPath;
+    nfdfilteritem_t filterItems[2] = {{"PC Save", "*"}, {"Console Save", "sav"}};
+    nfdresult_t result = NFD::OpenDialog(outPath, filterItems, 2);
+    if (result == NFD_OKAY)
     {
-        ifstream infile(path);
-        string line;
-        int num_lines;
-        if (!infile.is_open())
+        std::filesystem::path filepath = outPath.get();
+        std::string fileext = filepath.extension().string();
+        if (fileext == ".sav")
         {
-            tinyfd_messageBox("Error", "Could not open file!", "ok", "error", 1);
+            is_json = true;
+        }
+
+        if (!is_json)
+        {
+            dir = filepath.parent_path().string();
+            std::vector<std::string> matchingFiles;
+
+            for (const auto &entry : std::filesystem::directory_iterator(dir))
+            {
+                std::string filename = entry.path().filename().string();
+                if ((filename.rfind("file0", 0) == 0) || (filename.rfind("file8", 0) == 0) || (filename.rfind("file9", 0) == 0))
+                {
+                    matchingFiles.push_back(filename);
+                }
+            }
+            for (std::string file : matchingFiles)
+            {
+                std::filesystem::path path = std::filesystem::path(dir) / file;
+                if (file == "file0")
+                {
+                    std::ifstream infile(path);
+                    std::string line;
+                    int num_lines;
+                    if (!std::filesystem::exists(path))
+                    {
+                        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not find file0!", window);
+                        return;
+                    }
+                    if (!infile.is_open())
+                    {
+                        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load file0!", window);
+                        return;
+                    }
+                    while (getline(infile, line))
+                    {
+                        num_lines++;
+                    }
+                    if (num_lines == 551)
+                        *is_xbox = true;
+                    infile.close();
+
+                    if (FileToStruct(path.string(), &save[0], is_xbox) != 0)
+                    {
+                        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load file0!", window);
+                        return;
+                    }
+                }
+                else if (file == "file9")
+                {
+                    if (FileToStruct(path.string(), &save[1], is_xbox) != 0)
+                    {
+                        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load file9!", window);
+                        return;
+                    }
+                }
+                else if (file == "file8")
+                {
+                    if (FileToStruct(path.string(), &save[2], is_xbox) != 0)
+                    {
+                        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load file8!", window);
+                        return;
+                    }
+                }
+            }
+        }
+        else
+        {
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "WIP", "Not implemented yet lol", window);
             return;
         }
-        while (getline(infile, line))
-        {
-            num_lines++;
-        }
-        if (num_lines == 551)
-            *is_xbox = true;
-        infile.clear();
-        infile.seekg(0, ios::beg);
-        infile >> save->name;
-        infile >> save->lv;
-        infile >> save->maxhp;
-        infile >> save->maxen;
-        infile >> save->at;
-        infile >> save->wstrength;
-        infile >> save->df;
-        infile >> save->adef;
-        infile >> save->sp;
-        infile >> save->xp;
-        infile >> save->gold;
-        infile >> save->kills;
-        for (int i = 0; i < 8; i++)
-        {
-            infile >> save->items[i];
-            infile >> save->phone[i];
-        }
-        infile >> save->weapon;
-        infile >> save->armor;
-        for (int i = 0; i < 512; i++)
-            infile >> save->flags[i];
-            
-        infile >> save->plot;
-        for (int i = 0; i < 3; i++)
-            infile >> save->menuchoice[i];
-        infile >> save->currentsong;
-        infile >> save->currentroom;
-        infile >> save->time;
-        if (is_xbox)
-        {
-            infile >> save->xbox_disconnect_counter;
-            infile >> save->xbox_coins_donated;
-        }
-        infile.close();
     }
 }
 
-void UndertaleSave::Save(SDL_Window * window, UndertaleCommon::UndertaleSaveFile * save, bool is_xbox, bool save_as)
+void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], bool is_xbox, bool save_as)
 {
     if (save_as)
     {
-        const char * save_path = tinyfd_saveFileDialog("Save as", "", 0, NULL, "all files");
-        if (save_path)
-            path = save_path;
+        NFD::Guard nfdGuard;
+        NFD::UniquePath outPath;
+        nfdfilteritem_t filterItems[2] = {{"PC Save", "*"}, {"Console Save", "sav"}};
+        nfdresult_t result = NFD::SaveDialog(outPath, filterItems, 2);
+        if (result == NFD_OKAY)
+        {
+            std::filesystem::path filepath = outPath.get();
+            dir = filepath.parent_path().string();
+        }
     }
-    ofstream outfile(path);
-    if (!outfile.is_open())
+    std::string files[3] = {"file0", "file9", "file8"};
+    int i = 0;
+    for (std::string file : files)
     {
-        tinyfd_messageBox("Error", "Could not save the file!", "ok", "error", 1);
-        return;
+        std::filesystem::path path = std::filesystem::path(dir) / file;
+        if (StructToFile(path.string(), &save[i], is_xbox) != 0)
+        {
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not save file!", window);
+            return;
+        }
+        i++;
     }
-        outfile << save->name << endl;
-        outfile << save->lv << endl;
-        outfile << save->maxhp << endl;
-        outfile << save->maxen << endl;
-        outfile << save->at << endl;
-        outfile << save->wstrength << endl;
-        outfile << save->df << endl;
-        outfile << save->adef << endl;
-        outfile << save->sp << endl;
-        outfile << save->xp << endl;
-        outfile << save->gold << endl;
-        outfile << save->kills << endl;
+}
+
+int UndertaleSave::FileToStruct(std::string path, UndertaleCommon::UndertaleSaveFile *save, bool is_xbox)
+{
+    std::ifstream infile(path);
+    if (!infile.is_open())
+        return 1;
+
+    infile >> save->name;
+    infile >> save->lv;
+    infile >> save->maxhp;
+    infile >> save->maxen;
+    infile >> save->at;
+    infile >> save->wstrength;
+    infile >> save->df;
+    infile >> save->adef;
+    infile >> save->sp;
+    infile >> save->xp;
+    infile >> save->gold;
+    infile >> save->kills;
+    for (int i = 0; i < 8; i++)
+    {
+        infile >> save->items[i];
+        infile >> save->phone[i];
+    }
+    infile >> save->weapon;
+    infile >> save->armor;
+    for (int i = 0; i < 512; i++)
+        infile >> save->flags[i];
+
+    infile >> save->plot;
+    for (int i = 0; i < 3; i++)
+        infile >> save->menuchoice[i];
+    infile >> save->currentsong;
+    infile >> save->currentroom;
+    infile >> save->time;
+    if (is_xbox)
+    {
+        infile >> save->xbox_disconnect_counter;
+        infile >> save->xbox_coins_donated;
+    }
+    infile.close();
+    save->initialized = true;
+
+    return 0;
+}
+
+int UndertaleSave::StructToFile(std::string path, UndertaleCommon::UndertaleSaveFile *save, bool is_xbox)
+{
+    if (save->initialized)
+    {
+        std::ofstream outfile(path);
+        if (!outfile.is_open())
+            return 1;
+
+        outfile << save->name << std::endl;
+        outfile << save->lv << std::endl;
+        outfile << save->maxhp << std::endl;
+        outfile << save->maxen << std::endl;
+        outfile << save->at << std::endl;
+        outfile << save->wstrength << std::endl;
+        outfile << save->df << std::endl;
+        outfile << save->adef << std::endl;
+        outfile << save->sp << std::endl;
+        outfile << save->xp << std::endl;
+        outfile << save->gold << std::endl;
+        outfile << save->kills << std::endl;
         for (int i = 0; i < 8; i++)
         {
-            outfile << save->items[i] << endl;
-            outfile << save->phone[i] << endl;
+            outfile << save->items[i] << std::endl;
+            outfile << save->phone[i] << std::endl;
         }
-        outfile << save->weapon << endl;
-        outfile << save->armor << endl;
+        outfile << save->weapon << std::endl;
+        outfile << save->armor << std::endl;
         for (int i = 0; i < 512; i++)
-            outfile << save->flags[i] << endl;
-            
-        outfile << save->plot << endl;
+            outfile << save->flags[i] << std::endl;
+
+        outfile << save->plot << std::endl;
         for (int i = 0; i < 3; i++)
-            outfile << save->menuchoice[i] << endl;
-        outfile << save->currentsong << endl;
-        outfile << save->currentroom << endl;
-        outfile << save->time << endl;
+            outfile << save->menuchoice[i] << std::endl;
+        outfile << save->currentsong << std::endl;
+        outfile << save->currentroom << std::endl;
+        outfile << save->time << std::endl;
         if (is_xbox)
         {
-            outfile << save->xbox_disconnect_counter << endl;
-            outfile << save->xbox_coins_donated << endl;
+            outfile << save->xbox_disconnect_counter << std::endl;
+            outfile << save->xbox_coins_donated << std::endl;
         }
-    outfile.close();
+        outfile.close();
+    }
+    return 0;
 }
