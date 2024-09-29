@@ -1,8 +1,4 @@
-#include "imgui.h"
-#include "imgui_stdlib.h"
 #include "UndertaleCommon.hpp"
-#include <sstream>
-#include <iomanip>
 
 class UndertaleGUI
 {

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef UNDERTALECOMMON_HPP
+#define UNDERTALECOMMON_HPP
 
 #include <string>
 
@@ -120,3 +121,5 @@ class UndertaleCommon
         };
         static const char * title;
 };
+
+#endif

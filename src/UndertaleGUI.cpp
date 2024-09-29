@@ -1,4 +1,7 @@
 #include "UndertaleGUI.hpp"
+#include "imgui.h"
+#include "imgui_stdlib.h"
+
 
 bool UndertaleGUI::quit = false;
 int UndertaleGUI::current_file = 0;

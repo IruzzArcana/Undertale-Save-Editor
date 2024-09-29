@@ -1,13 +1,6 @@
 #include "SDL.h"
 #include "SDL_image.h"
 #include "imgui.h"
-#include "imgui_impl_sdl2.h"
-#include "imgui_impl_sdlrenderer2.h"
-#include <tchar.h>
-#include <Windows.h>
-#include <iostream>
-#include "UndertaleGUI.hpp"
-#include "UndertaleSave.hpp"
 #include "UndertaleCommon.hpp"
 
 class UndertaleApp

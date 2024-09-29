@@ -1,11 +1,5 @@
 #include "SDL.h"
 #include "UndertaleCommon.hpp"
-#include <vector>
-#include "nfd.hpp"
-#include "nfd_sdl2.h"
-#include <filesystem>
-#include <fstream>
-#include <iostream>
 
 class UndertaleSave
 {

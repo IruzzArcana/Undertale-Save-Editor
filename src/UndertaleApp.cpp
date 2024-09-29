@@ -1,4 +1,11 @@
 #include "UndertaleApp.hpp"
+#include "UndertaleGUI.hpp"
+#include "UndertaleSave.hpp"
+#include "imgui_impl_sdl2.h"
+#include "imgui_impl_sdlrenderer2.h"
+#include <tchar.h>
+#include <Windows.h>
+#include <iostream>
 
 bool UndertaleApp::is_running = false;
 bool UndertaleApp::is_xbox = false;

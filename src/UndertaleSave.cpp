@@ -1,4 +1,10 @@
 #include "UndertaleSave.hpp"
+#include "nfd.hpp"
+#include "nfd_sdl2.h"
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <vector>
 
 std::string UndertaleSave::dir;
 bool UndertaleSave::is_json = false;
