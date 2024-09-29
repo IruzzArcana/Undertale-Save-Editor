@@ -1,10 +1,10 @@
 #include "UndertaleSave.hpp"
 
 std::string UndertaleSave::dir;
+bool UndertaleSave::is_json = false;
 
-void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], bool *is_xbox)
+void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], bool &is_xbox)
 {
-    bool is_json = false;
     NFD::Guard nfdGuard;
     NFD::UniquePath outPath;
     nfdfilteritem_t filterItems[2] = {{"PC Save", "*"}, {"Console Save", "sav"}};
@@ -13,10 +13,7 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
     {
         std::filesystem::path filepath = outPath.get();
         std::string fileext = filepath.extension().string();
-        if (fileext == ".sav")
-        {
-            is_json = true;
-        }
+        is_json = (fileext == ".sav");
 
         if (!is_json)
         {
@@ -53,8 +50,7 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
                     {
                         num_lines++;
                     }
-                    if (num_lines == 551)
-                        *is_xbox = true;
+                    is_xbox = (num_lines == 551);
                     infile.close();
 
                     if (FileToStruct(path.string(), &save[0], is_xbox) != 0)
@@ -100,20 +96,28 @@ void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
         if (result == NFD_OKAY)
         {
             std::filesystem::path filepath = outPath.get();
-            dir = filepath.parent_path().string();
+            std::string fileext = filepath.extension().string();
+            is_json = (fileext == ".sav");
         }
     }
-    std::string files[3] = {"file0", "file9", "file8"};
-    int i = 0;
-    for (std::string file : files)
+    if (!is_json)
     {
-        std::filesystem::path path = std::filesystem::path(dir) / file;
-        if (StructToFile(path.string(), &save[i], is_xbox) != 0)
+        std::string files[3] = {"file0", "file9", "file8"};
+        int i = 0;
+        for (std::string file : files)
         {
-            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not save file!", window);
-            return;
+            std::filesystem::path path = std::filesystem::path(dir) / file;
+            if (StructToFile(path.string(), &save[i], is_xbox) != 0)
+            {
+                SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not save file!", window);
+                return;
+            }
+            i++;
         }
-        i++;
+    }
+    else
+    {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "WIP", "Also a work in progress lmao", window);
     }
 }
 

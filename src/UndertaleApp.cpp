@@ -87,7 +87,7 @@ void UndertaleApp::Render()
     
     UndertaleGUI::DrawMenuBar(true, save, save[0].initialized);
     UndertaleGUI::DrawAboutPage(UndertaleGUI::ShowAboutPage());
-    UndertaleGUI::DrawSaveEditor(show_editor, &save[UndertaleGUI::GetFile()], &is_xbox);
+    UndertaleGUI::DrawSaveEditor(show_editor, &save[UndertaleGUI::GetFile()], is_xbox);
 
     ImGui::EndFrame();
     ImGui::Render();
@@ -108,7 +108,7 @@ void UndertaleApp::Loop()
         switch (UndertaleGUI::ShowFileDialog())
         {
             case UndertaleGUI::FILE_LOAD:
-                UndertaleSave::Load(window, save, &is_xbox);
+                UndertaleSave::Load(window, save, is_xbox);
                 break;
             case UndertaleGUI::FILE_SAVE:
                 UndertaleSave::Save(window, save, is_xbox);

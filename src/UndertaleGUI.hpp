@@ -22,7 +22,7 @@ class UndertaleGUI
 
         static void DrawMenuBar(bool enabled, UndertaleCommon::UndertaleSaveFile save[3], int mode);
         static void DrawAboutPage(bool enabled);
-        static void DrawSaveEditor(bool enalbed, UndertaleCommon::UndertaleSaveFile * save, bool * is_xbox);
+        static void DrawSaveEditor(bool enalbed, UndertaleCommon::UndertaleSaveFile * save, bool is_xbox);
         static bool Quit() { return quit; };
         static bool ShowAboutPage() { return show_about_page; };
         static int GetFile() { return current_file; };

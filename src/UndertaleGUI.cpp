@@ -81,7 +81,7 @@ void UndertaleGUI::DrawAboutPage(bool enabled)
     }
 }
 
-void UndertaleGUI::DrawSaveEditor(bool enabled, UndertaleCommon::UndertaleSaveFile *save, bool *is_xbox)
+void UndertaleGUI::DrawSaveEditor(bool enabled, UndertaleCommon::UndertaleSaveFile *save, bool is_xbox)
 {
     if (enabled)
     {
@@ -256,7 +256,6 @@ void UndertaleGUI::DrawSaveEditor(bool enabled, UndertaleCommon::UndertaleSaveFi
                 ImGui::InputDouble("Pacifist progression", &save->flags[493]);
                 if (is_xbox)
                 {
-
                     ImGui::InputInt("Xbox Disconnect Count", &save->xbox_disconnect_counter);
                     ImGui::InputInt("Xbox Coins Donated", &save->xbox_coins_donated);
                     save->flags[299] = save->xbox_coins_donated;
