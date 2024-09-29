@@ -24,6 +24,7 @@ class UndertaleGUI
         static int GetFile() { return current_file; };
         static int ShowFileDialog() { return show_file_dialog; };
         static void HideFileDialog() { show_file_dialog = FILE_NONE; };
+    
     private:
         static int DrawCombo(const char * label, const char * state[], int size, int selected_state, int index_override[] = {}, int index_size = 0);
         static bool quit;
