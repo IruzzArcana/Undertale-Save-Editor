@@ -6,12 +6,12 @@
 #include "UndertaleSave.hpp"
 #include "nfd.hpp"
 #include "nfd_sdl2.h"
-#include "json.hpp"
 
 using json = nlohmann::json;
 namespace fs = std::filesystem;
 std::string UndertaleSave::dir;
 bool UndertaleSave::is_json = false;
+nlohmann::json UndertaleSave::jsondata;
 
 void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], bool &is_xbox)
 {
@@ -57,9 +57,8 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
                         return;
                     }
                     while (getline(infile, line))
-                    {
                         num_lines++;
-                    }
+
                     is_xbox = (num_lines == 551);
                     infile.close();
 
@@ -89,9 +88,8 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
         }
         else
         {
-            std::string path = filepath.string();
-            std::ifstream jsonfile(path);
-            json jsondata;
+            dir = filepath.string();
+            std::ifstream jsonfile(dir);        
             int num_lines;
 
             if (!jsonfile.is_open())
@@ -108,14 +106,12 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
                     return;
                 }
                 std::string file0 = jsondata["file0"].get<std::string>();
-                std::stringstream contentStream = ReplaceStringLiterals(file0);
+                std::stringstream buffer = ReplaceStringLiterals(file0);
                 std::string line;
                 
-                while (std::getline(contentStream, line))
-                {
+                while (std::getline(buffer, line))
                     num_lines++;
-                    std::cout << line << std::endl;
-                }
+                
                 is_xbox = (num_lines == 551);
                 JSONToStruct(file0, &save[0], is_xbox);
                 
@@ -142,6 +138,7 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
 
 void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], bool is_xbox, bool save_as)
 {
+    std::string files[3] = {"file0", "file9", "file8"};
     if (save_as)
     {
         NFD::Guard nfdGuard;
@@ -156,8 +153,7 @@ void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
         }
     }
     if (!is_json)
-    {
-        std::string files[3] = {"file0", "file9", "file8"};
+    {  
         int i = 0;
         for (std::string file : files)
         {
@@ -172,7 +168,25 @@ void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
     }
     else
     {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "WIP", "Also a work in progress lmao", window);
+        std::ofstream outfile(dir);
+
+        if (!outfile.is_open())
+        {
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not save file!", window);
+            return;
+        }
+        int i = 0;
+        for (std::string file : files)
+        {
+            if (jsondata.contains(file))
+            {
+                std::stringstream buffer = StructToJSON(&save[i], is_xbox);
+                jsondata[file] = buffer.str();
+            }
+            i++;
+        }
+        outfile << jsondata;
+        outfile.close();
     }
 }
 
@@ -308,6 +322,45 @@ int UndertaleSave::JSONToStruct(std::string data, UndertaleCommon::UndertaleSave
     return 0;
 }
 
+std::stringstream UndertaleSave::StructToJSON(UndertaleCommon::UndertaleSaveFile * save, bool is_xbox)
+{
+    std::stringstream buffer;
+    buffer << save->name << "\r\n";
+    buffer << save->lv << "\r\n";
+    buffer << save->maxhp << "\r\n";
+    buffer << save->maxen << "\r\n";
+    buffer << save->at << "\r\n";
+    buffer << save->wstrength << "\r\n";
+    buffer << save->df << "\r\n";
+    buffer << save->adef << "\r\n";
+    buffer << save->sp << "\r\n";
+    buffer << save->xp << "\r\n";
+    buffer << save->gold << "\r\n";
+    buffer << save->kills << "\r\n";
+    for (int i = 0; i < 8; i++)
+    {
+        buffer << save->items[i] << "\r\n";
+        buffer << save->phone[i] << "\r\n";
+    }
+    buffer << save->weapon << "\r\n";
+    buffer << save->armor << "\r\n";
+    for (int i = 0; i < 512; i++)
+        buffer << save->flags[i] << "\r\n";
+
+    buffer << save->plot << "\r\n";
+    for (int i = 0; i < 3; i++)
+        buffer << save->menuchoice[i] << "\r\n";
+    buffer << save->currentsong << "\r\n";
+    buffer << save->currentroom << "\r\n";
+    buffer << save->time << "\r\n";
+    if (is_xbox)
+    {
+        buffer << save->xbox_disconnect_counter << "\r\n";
+        buffer << save->xbox_coins_donated << "\r\n";
+    }
+    return buffer;
+}
+
 std::stringstream UndertaleSave::ReplaceStringLiterals(std::string str)
 {
    size_t pos;
@@ -316,6 +369,6 @@ std::stringstream UndertaleSave::ReplaceStringLiterals(std::string str)
        str.replace(pos, 4, "\n");
        pos += 1;
    }
-   std::stringstream contentStream(str);
-   return contentStream;
+   std::stringstream buffer(str);
+   return buffer;
 }

@@ -1,5 +1,6 @@
 #include "SDL.h"
 #include "UndertaleCommon.hpp"
+#include "json.hpp"
 
 class UndertaleSave
 {
@@ -11,9 +12,10 @@ class UndertaleSave
         static int FileToStruct(std::string path, UndertaleCommon::UndertaleSaveFile * save, bool is_xbox);
         static int StructToFile(std::string path, UndertaleCommon::UndertaleSaveFile * save, bool is_xbox);
         static int JSONToStruct(std::string data, UndertaleCommon::UndertaleSaveFile * save, bool is_xbox);
-        static int StructToJSON(std::string data, UndertaleCommon::UndertaleSaveFile * save, bool is_xbox);
+        static std::stringstream StructToJSON(UndertaleCommon::UndertaleSaveFile * save, bool is_xbox);
         static std::stringstream ReplaceStringLiterals(std::string str);
         static std::string dir;
         static const char * path;
         static bool is_json;
+        static nlohmann::json jsondata;
 };
