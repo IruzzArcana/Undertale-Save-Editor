@@ -139,6 +139,8 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
 void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], bool is_xbox, bool save_as)
 {
     std::string files[3] = {"file0", "file9", "file8"};
+    fs::path filepath;
+
     if (save_as)
     {
         NFD::Guard nfdGuard;
@@ -147,13 +149,15 @@ void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
         nfdresult_t result = NFD::SaveDialog(outPath, filterItems, 2);
         if (result == NFD_OKAY)
         {
-            fs::path filepath = outPath.get();
+            filepath = outPath.get();
             std::string fileext = filepath.extension().string();
             is_json = (fileext == ".sav");
         }
     }
+    
     if (!is_json)
-    {  
+    {
+        dir = filepath.parent_path().string();
         int i = 0;
         for (std::string file : files)
         {
