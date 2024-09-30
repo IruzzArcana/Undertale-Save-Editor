@@ -1,11 +1,15 @@
-#include "UndertaleSave.hpp"
-#include "nfd.hpp"
-#include "nfd_sdl2.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <sstream>
+#include "UndertaleSave.hpp"
+#include "nfd.hpp"
+#include "nfd_sdl2.h"
+#include "json.hpp"
 
+using json = nlohmann::json;
+namespace fs = std::filesystem;
 std::string UndertaleSave::dir;
 bool UndertaleSave::is_json = false;
 
@@ -17,7 +21,7 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
     nfdresult_t result = NFD::OpenDialog(outPath, filterItems, 2);
     if (result == NFD_OKAY)
     {
-        std::filesystem::path filepath = outPath.get();
+        fs::path filepath = outPath.get();
         std::string fileext = filepath.extension().string();
         is_json = (fileext == ".sav");
 
@@ -26,7 +30,7 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
             dir = filepath.parent_path().string();
             std::vector<std::string> matchingFiles;
 
-            for (const auto &entry : std::filesystem::directory_iterator(dir))
+            for (const auto &entry : fs::directory_iterator(dir))
             {
                 std::string filename = entry.path().filename().string();
                 if ((filename.rfind("file0", 0) == 0) || (filename.rfind("file8", 0) == 0) || (filename.rfind("file9", 0) == 0))
@@ -36,13 +40,13 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
             }
             for (std::string file : matchingFiles)
             {
-                std::filesystem::path path = std::filesystem::path(dir) / file;
+                fs::path path = fs::path(dir) / file;
                 if (file == "file0")
                 {
                     std::ifstream infile(path);
                     std::string line;
                     int num_lines;
-                    if (!std::filesystem::exists(path))
+                    if (!fs::exists(path))
                     {
                         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not find file0!", window);
                         return;
@@ -85,8 +89,53 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
         }
         else
         {
-            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "WIP", "Not implemented yet lol", window);
-            return;
+            std::string path = filepath.string();
+            std::ifstream jsonfile(path);
+            json jsondata;
+            int num_lines;
+
+            if (!jsonfile.is_open())
+            {
+                SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load undertale.sav!", window);
+            }
+            try
+            {
+                jsonfile >> jsondata;
+                jsonfile.close();
+                if (!jsondata.contains("file0"))
+                {
+                    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not find file0!", window);
+                    return;
+                }
+                std::string file0 = jsondata["file0"].get<std::string>();
+                std::stringstream contentStream = ReplaceStringLiterals(file0);
+                std::string line;
+                
+                while (std::getline(contentStream, line))
+                {
+                    num_lines++;
+                    std::cout << line << std::endl;
+                }
+                is_xbox = (num_lines == 551);
+                JSONToStruct(file0, &save[0], is_xbox);
+                
+                if (jsondata.contains("file9"))
+                {
+                    std::string file9 = jsondata["file9"].get<std::string>();
+                    JSONToStruct(file9, &save[1], is_xbox);
+                }
+
+                if (jsondata.contains("file8"))
+                {
+                    std::string file9 = jsondata["file8"].get<std::string>();
+                    JSONToStruct(file9, &save[2], is_xbox);
+                }
+            }
+            catch (const std::exception& e)
+            {
+                SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Failed to parse *.sav file!", window);
+                jsonfile.close();
+            }
         }
     }
 }
@@ -101,7 +150,7 @@ void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
         nfdresult_t result = NFD::SaveDialog(outPath, filterItems, 2);
         if (result == NFD_OKAY)
         {
-            std::filesystem::path filepath = outPath.get();
+            fs::path filepath = outPath.get();
             std::string fileext = filepath.extension().string();
             is_json = (fileext == ".sav");
         }
@@ -112,7 +161,7 @@ void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
         int i = 0;
         for (std::string file : files)
         {
-            std::filesystem::path path = std::filesystem::path(dir) / file;
+            fs::path path = fs::path(dir) / file;
             if (StructToFile(path.string(), &save[i], is_xbox) != 0)
             {
                 SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not save file!", window);
@@ -216,4 +265,57 @@ int UndertaleSave::StructToFile(std::string path, UndertaleCommon::UndertaleSave
         outfile.close();
     }
     return 0;
+}
+
+int UndertaleSave::JSONToStruct(std::string data, UndertaleCommon::UndertaleSaveFile * save, bool is_xbox)
+{
+    std::stringstream buffer = ReplaceStringLiterals(data);
+
+    buffer >> save->name;
+    buffer >> save->lv;
+    buffer >> save->maxhp;
+    buffer >> save->maxen;
+    buffer >> save->at;
+    buffer >> save->wstrength;
+    buffer >> save->df;
+    buffer >> save->adef;
+    buffer >> save->sp;
+    buffer >> save->xp;
+    buffer >> save->gold;
+    buffer >> save->kills;
+    for (int i = 0; i < 8; i++)
+    {
+        buffer >> save->items[i];
+        buffer >> save->phone[i];
+    }
+    buffer >> save->weapon;
+    buffer >> save->armor;
+    for (int i = 0; i < 512; i++)
+        buffer >> save->flags[i];
+
+    buffer >> save->plot;
+    for (int i = 0; i < 3; i++)
+        buffer >> save->menuchoice[i];
+    buffer >> save->currentsong;
+    buffer >> save->currentroom;
+    buffer >> save->time;
+    if (is_xbox)
+    {
+        buffer >> save->xbox_disconnect_counter;
+        buffer >> save->xbox_coins_donated;
+    }
+    save->initialized = true;
+    return 0;
+}
+
+std::stringstream UndertaleSave::ReplaceStringLiterals(std::string str)
+{
+   size_t pos;
+   while (pos = str.find("\\r\\n", pos) != std::string::npos)
+   {
+       str.replace(pos, 4, "\n");
+       pos += 1;
+   }
+   std::stringstream contentStream(str);
+   return contentStream;
 }

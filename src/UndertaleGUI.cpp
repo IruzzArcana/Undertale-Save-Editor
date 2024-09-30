@@ -77,6 +77,8 @@ void UndertaleGUI::DrawAboutPage(bool enabled)
 {
     if (enabled)
     {
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         ImGui::Begin("About", &show_about_page, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
         ImGui::Text(UndertaleCommon::title);
         ImGui::Text("v0.0.1");
