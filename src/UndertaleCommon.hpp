@@ -37,89 +37,131 @@ class UndertaleCommon
             int xbox_disconnect_counter;
             int xbox_coins_donated;
         };
-        enum class UndertaleItems
-        {
-            None,
-            Monster_Candy,
-            Croquet_Roll,
-            Stick,
-            Bandage,
-            Rock_Candy,
-            Pumpkin_Rings,
-            Spider_Donut,
-            Stoic_Onion,
-            Ghost_Fruit,
-            Spider_Cider,
-            Butterscotch_Pie,
-            Faded_Ribbon,
-            Toy_Knife,
-            Tough_Glove,
-            Manly_Bandana,
-            Snowman_Piece,
-            Nice_Cream,
-            Puppydough_Icecream,
-            Bisicle,
-            Unisicle,
-            Cinnamon_Bun,
-            Temmie_Flakes,
-            Abandoned_Quiche,
-            Old_Tutu,
-            Ballet_Shoes,
-            Punch_Card,
-            Annoying_Dog,
-            Dog_Salad,
-            Dog_Residue_1,
-            Dog_Residue_2,
-            Dog_Residue_3,
-            Dog_Residue_4,
-            Dog_Residue_5,
-            Dog_Residue_6,
-            Astronaut_Food,
-            Instant_Noodles,
-            Crab_Apple,
-            Hot_Dog,
-            Hot_Cat,
-            Glamburger,
-            Sea_Tea,
-            Starfait,
-            Legendary_Hero,
-            Cloudy_Glasses,
-            Torn_Notebook,
-            Stained_Apron,
-            Burnt_Pan,
-            Cowboy_hat,
-            Empty_Gun,
-            Heart_Locket,
-            Worn_Dagger,
-            Real_Knife,
-            The_Locket,
-            Bad_Memory,
-            Dream,
-            Undyne_Letter,
-            Undyne_Letter_EX,
-            Potato_Chisps,
-            Junk_Food,
-            Mystery_Key,
-            Face_Steak,
-            Hush_Puppy,
-            Snail_Pie,
-            Temmie_Armor
-        };
 
-        enum class UndertaleWeapons
+        struct UndertaleINIGeneral
         {
-            None,
-            Stick = 4,
-            Toy_Knife = 13,
-            Tough_Glove = 14,
-            Ballet_Shoes = 25,
-            Torn_Notebook = 45,
-            Burnt_Pan = 47,
-            Empty_Gun = 49,
-            Worn_Dagger = 51,
-            Real_Knife = 52
+            std::string Name;
+            double Time;
+            double Room;
+            double Gameover;
+            double Kills;
+            double Love;
+            double fun;
+            bool Tale;
+            double Won;
+            double BW;
+            double BC;
+            bool CP;
+            bool BP;
+            bool CH;
+            bool BH;
+            bool DB;
+        };
+        struct UndertaleINIFlowey
+        {
+            double Met1;
+            bool K;
+            bool NK;
+            bool IK;
+            bool SK;
+            bool FloweyExplain1;
+            double EX;
+            double CHANGE;
+            bool AK;
+            bool AF;
+            double Alter;
+            double alter2;
+            double truename;
+            double SPECIALK;
+        };
+        struct UndertaleINIToriel
+        {
+            double Bscotch;
+            double TS;
+            double TK;
+        };
+        struct UndertaleINISans
+        {
+            bool EndMet;
+            double MeetLv1;
+            double MeetLv2;
+            double MeetLv;
+            double Pass;
+            double Intro;
+            double F;
+            double MP;
+            double SK;
+            double SS;
+            double SS2;
+        };
+        struct UndertaleINIPapyrus
+        {
+            double M1;
+            double PS;
+            double PD;
+            double PK;
+        };
+        struct UndertaleINIFFFFF
+        {
+            bool F;
+            double D;
+            double P;
+            double E;
+        };
+        struct UndertaleINIUndyne
+        {
+            double UD;
+        };
+        struct UndertaleINIMettaton
+        {
+            bool BossMet;
+        };
+        struct UndertaleINIMett
+        {
+            bool O;
+        };
+        struct UndertaleINIMTT
+        {
+            double EssayNo;
+        };
+        struct UndertaleINIAsgore
+        {
+            double KillYou;
+        };
+        struct UndertaleINIAlphys
+        {
+            double AD;
+        };
+        struct UndertaleINIF7
+        {
+            bool F7;
+        };
+        struct UndertaleINIEndF
+        {
+            double EndF;
+        };
+        struct UndertaleINIDogshrine
+        {
+            double Donated;
+        };
+        struct UndertaleINI
+        {
+            UndertaleINIGeneral general;
+            UndertaleINIFlowey flowey;
+            UndertaleINIToriel toriel;
+            UndertaleINISans sans;
+            UndertaleINIPapyrus papyrus;
+            UndertaleINIFFFFF fffff;
+            UndertaleINIUndyne undyne;
+            UndertaleINIMettaton mettaton;
+            UndertaleINIMett mett;
+            UndertaleINIMTT MTT;
+            UndertaleINIAsgore asgore;
+            UndertaleINIAlphys alphys;
+            UndertaleINIF7 f7;
+            UndertaleINIEndF endf;
+            UndertaleINIDogshrine dogshrine;
         };
         static const char * title;
 };
-
 #endif
