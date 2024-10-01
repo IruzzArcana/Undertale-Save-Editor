@@ -152,12 +152,15 @@ void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
             filepath = outPath.get();
             std::string fileext = filepath.extension().string();
             is_json = (fileext == ".sav");
+            if (!is_json)
+                dir = filepath.parent_path().string();
+            else
+                dir = filepath.string();
         }
     }
     
     if (!is_json)
     {
-        dir = filepath.parent_path().string();
         int i = 0;
         for (std::string file : files)
         {
