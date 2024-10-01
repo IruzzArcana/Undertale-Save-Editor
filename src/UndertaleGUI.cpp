@@ -89,7 +89,6 @@ void UndertaleGUI::DrawSaveEditor(bool enabled, UndertaleCommon::UndertaleSaveFi
 {
     if (enabled)
     {
-
         std::string title = "Save Editor";
         switch (current_file)
         {
