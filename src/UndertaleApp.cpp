@@ -11,6 +11,7 @@ bool UndertaleApp::is_running = false;
 bool UndertaleApp::is_xbox = false;
 const char * UndertaleCommon::title = "Undertale Save Editor";
 UndertaleCommon::UndertaleSaveFile UndertaleApp::save[3]{};
+UndertaleCommon::UndertaleINI UndertaleApp::ini{};
 bool UndertaleApp::show_editor = false;
 UndertaleApp::UndertaleApp()
 {
@@ -94,7 +95,7 @@ void UndertaleApp::Render()
     
     UndertaleGUI::DrawMenuBar(true, save, save[0].initialized);
     UndertaleGUI::DrawAboutPage(UndertaleGUI::ShowAboutPage());
-    UndertaleGUI::DrawSaveEditor(show_editor, &save[UndertaleGUI::GetFile()], is_xbox);
+    UndertaleGUI::DrawSaveEditor(show_editor, &save[UndertaleGUI::GetFile()], &ini, is_xbox);
 
     ImGui::EndFrame();
     ImGui::Render();

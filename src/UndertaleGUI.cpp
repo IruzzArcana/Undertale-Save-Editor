@@ -85,7 +85,7 @@ void UndertaleGUI::DrawAboutPage(bool enabled)
     }
 }
 
-void UndertaleGUI::DrawSaveEditor(bool enabled, UndertaleCommon::UndertaleSaveFile *save, bool is_xbox)
+void UndertaleGUI::DrawSaveEditor(bool enabled, UndertaleCommon::UndertaleSaveFile *save, UndertaleCommon::UndertaleINI *ini, bool is_xbox)
 {
     if (enabled)
     {
@@ -110,10 +110,12 @@ void UndertaleGUI::DrawSaveEditor(bool enabled, UndertaleCommon::UndertaleSaveFi
         }
         if (current_file < 3)
             DrawFileEditor(title.c_str(), save, is_xbox);
+        else
+        DrawINIEditor(title.c_str(), ini, is_xbox);
     }
 }
 
-void UndertaleGUI::DrawFileEditor(const char *title, UndertaleCommon::UndertaleSaveFile * save, bool is_xbox)
+void UndertaleGUI::DrawFileEditor(const char *title, UndertaleCommon::UndertaleSaveFile *save, bool is_xbox)
 {
     ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_FirstUseEver);
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
@@ -293,6 +295,328 @@ void UndertaleGUI::DrawFileEditor(const char *title, UndertaleCommon::UndertaleS
 
     ImGui::End();
 }
+
+void UndertaleGUI::DrawINIEditor(const char *title, UndertaleCommon::UndertaleINI *ini, bool is_xbox)
+{
+    ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_FirstUseEver);
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGui::Begin(title, NULL, ImGuiWindowFlags_NoCollapse);
+
+    if (ImGui::CollapsingHeader("General"))
+    {
+        ImGui::InputTextWithHint("Name", "Name the fallen human.", &ini->general.Name);
+        ImGui::InputDouble("Time", &ini->general.Time);
+        ImGui::InputInt("Room", &ini->general.Room);
+        ImGui::InputInt("Game Over", &ini->general.Gameover);
+        ImGui::SameLine();
+        HelpMarker("How many times you've died.");
+
+        ImGui::InputInt("Kills", &ini->general.Kills);
+        ImGui::InputInt("LOVE", &ini->general.Love);
+        ImGui::InputInt("fun", &ini->general.fun);
+        ImGui::InputInt("Won", &ini->general.Won);
+        ImGui::SameLine();
+        HelpMarker("Defeated Flowey in the Neutral route.");
+        
+        ImGui::InputInt("BW", &ini->general.BW);
+        ImGui::SameLine();
+        HelpMarker("The amount of times you had Won before the last True Reset.\nUsed for unlocking the Dynamic borders");
+       
+        ImGui::InputInt("BC", &ini->general.BC);
+        ImGui::SameLine();
+        HelpMarker("The total number of items you have obtained.\nUsed for unlocking item achievements on PS.");
+        
+        ImGui::Checkbox("Tale", &ini->general.Tale);
+        ImGui::SameLine();
+        HelpMarker("Listened to the monsters tale in New Home");
+        ImGui::SameLine();
+       
+        ImGui::Checkbox("CP", &ini->general.CP);
+        ImGui::SameLine();
+        HelpMarker("Completed True Pacifist.\nUsed for unlocking the Dynamic borders.\nAlso unlocks the True Lab border.");
+        ImGui::SameLine();
+       
+        ImGui::Checkbox("BP", &ini->general.BP);
+        ImGui::SameLine();
+        HelpMarker("True Reset with CP set to 1.\nUsed for unlocking the Dynamic borders.\nAlso unlocks the True Lab border.");
+        ImGui::SameLine();
+       
+        ImGui::Checkbox("CH", &ini->general.CH);
+        if (ini->general.CH && ini->general.BH)
+            ini->general.BH = false;
+        ImGui::SameLine();
+        HelpMarker("Completed Hard Mode.\nUsed for unlocking the Beauty Border.");
+        ImGui::SameLine();
+    
+        ImGui::Checkbox("BH", &ini->general.BH);
+        if (ini->general.BH && ini->general.CH)
+            ini->general.CH = false;
+        ImGui::SameLine();
+        HelpMarker("Pressed True Reset with Beauty Unlocked.");
+        ImGui::SameLine();
+        
+        ImGui::Checkbox("DB", &ini->general.DB);
+        
+        ImGui::SameLine();
+        HelpMarker("Interacted with the Legendary Artifact.\nUsed for unlocking Super Dog, Hoi.");
+    }
+
+    if (ImGui::CollapsingHeader("Reset"))
+    {
+        ImGui::Checkbox("reset", &ini->reset.reset);
+        ImGui::SameLine();
+        HelpMarker("Pressed True Reset.");
+        ImGui::SameLine();
+
+        ImGui::Checkbox("s_key", &ini->reset.s_key);
+        ImGui::SameLine();
+        HelpMarker("Dodged all of the credits.");
+    }
+
+    if (ImGui::CollapsingHeader("Flowey"))
+    {
+        ImGui::InputInt("Met1", &ini->flowey.Met1);
+        ImGui::SameLine();
+        HelpMarker("Number of times you've met Flowey at the start of the game.");        
+
+        ImGui::InputInt("EX", &ini->flowey.EX);
+        ImGui::SameLine();
+        HelpMarker("How many times you've heard Flowey's post-neutral dialogue");
+
+        ImGui::InputInt("CHANGE", &ini->flowey.CHANGE);
+        ImGui::SameLine();
+        HelpMarker("Set to 1 after aborting a neutral-murderer path\n and 2 after going back to killing.");
+
+        ImGui::InputInt("Alter", &ini->flowey.Alter);
+        ImGui::SameLine();
+        HelpMarker("Spared Photoshop Flowey.");
+
+        ImGui::InputInt("alter2", &ini->flowey.alter2);
+        ImGui::SameLine();
+        HelpMarker("Triggered a genocide route and met Flowey in the room before\n the ruins exit.");
+
+        ImGui::InputInt("truename", &ini->flowey.truename);
+        ImGui::SameLine();
+        HelpMarker("Same as alter2, but if set Flowey won't be in the room before the ruins exit.");
+
+        ImGui::InputInt("SPECIALK", &ini->flowey.SPECIALK);
+        ImGui::SameLine();
+        HelpMarker("Prevents Flowey from showing up after the post-neutral phonecall again.");
+        
+        ImGui::Checkbox("K", &ini->flowey.K);
+        ImGui::SameLine();
+        HelpMarker("Killed Flowey");
+        ImGui::SameLine();
+
+        ImGui::Checkbox("NK", &ini->flowey.NK);
+        ImGui::SameLine();
+        HelpMarker("Spared Flowey during a neutral-pacifist route.");
+        ImGui::SameLine();
+
+        ImGui::Checkbox("IK", &ini->flowey.IK);
+        ImGui::SameLine();
+        HelpMarker("Spared Flowey during a neutral-with-EXP route");
+        ImGui::SameLine();
+
+        ImGui::Checkbox("SK", &ini->flowey.SK);
+        ImGui::SameLine();
+        HelpMarker("Asgore commited suicide");
+        ImGui::SameLine();
+
+        ImGui::Checkbox("FloweyExplain1", &ini->flowey.FloweyExplain1);
+        ImGui::SameLine();
+        HelpMarker("Spared Toriel after Killing her, or vice-versa");
+        
+        ImGui::Checkbox("AK", &ini->flowey.AK);
+        ImGui::SameLine();
+        HelpMarker("Killed Asgore during a neutral-pacifist route.");
+        ImGui::SameLine();
+        
+        ImGui::Checkbox("AF", &ini->flowey.AF);
+        ImGui::SameLine();
+        HelpMarker("Completed Alphys date but reached a neutral ending anyway.");
+    }
+
+    if (ImGui::CollapsingHeader("Toriel"))
+    {
+        const char * bscotch_state[3] = {"Not set", "Butterscotch", "Cinnamon"};
+        int selected_bscotch = ini->toriel.Bscotch;
+        selected_bscotch = DrawCombo("Bscotch", bscotch_state, IM_ARRAYSIZE(bscotch_state), selected_bscotch);
+        ini->toriel.Bscotch = selected_bscotch;
+        ImGui::SameLine();
+        HelpMarker("Pie preferences.");
+
+        ImGui::InputInt("TS", &ini->toriel.TS);
+        ImGui::SameLine();
+        HelpMarker("Number of times you've spared Toriel.");
+
+        ImGui::InputInt("TK", &ini->toriel.TK);
+        ImGui::SameLine();
+        HelpMarker("Number of times you've killed Toriel.");
+    }
+
+    if (ImGui::CollapsingHeader("Sans"))
+    {
+        ImGui::InputInt("M1", &ini->sans.M1);
+        ImGui::SameLine();
+        HelpMarker("Number of times you've met Sans after exiting the ruins.");
+
+        ImGui::InputInt("MeetLv1", &ini->sans.MeetLv1);
+        ImGui::SameLine();
+        HelpMarker("The number of times you've met Sans with no kills.");
+
+        ImGui::InputInt("MeetLv1", &ini->sans.MeetLv2);
+        ImGui::SameLine();
+        HelpMarker("The number of times you've met Sans with kills.");
+
+        ImGui::InputInt("MeetLv", &ini->sans.MeetLv1);
+        ImGui::SameLine();
+        HelpMarker("The LOVE you last met Sans at.");
+
+        const char * pass_state[4] = {"No password", "Secret codeword", "Secret secret codeword", "Basement key acquired"};
+        int selected_pass = ini->sans.Pass;
+        selected_pass = DrawCombo("Pass", pass_state, IM_ARRAYSIZE(pass_state), selected_pass);
+        ini->sans.Pass = selected_pass;
+        ImGui::SameLine();
+        HelpMarker("Pacifist password rank.");
+
+        ImGui::InputInt("Intro", &ini->sans.Intro);
+        ImGui::SameLine();
+        HelpMarker("The number of times you've heard Sans' intro in a Genocide route.");
+
+        ImGui::InputInt("F", &ini->sans.F);
+        ImGui::SameLine();
+        HelpMarker("The number of times you've fought Sans in a Genocide route.");
+
+        ImGui::InputInt("F", &ini->sans.MP);
+        ImGui::SameLine();
+        HelpMarker("The number of times you've reached the \"midpoint\" of\nSans' fight in a Genocide Route.");
+        
+        ImGui::InputInt("SK", &ini->sans.SK);
+        ImGui::SameLine();
+        HelpMarker("The number of times you've killed Sans in a Genocide route.");
+
+        ImGui::InputInt("SS", &ini->sans.SS);
+        ImGui::SameLine();
+        HelpMarker("The number of times you've spared Sans in a Genocide route.");
+
+        ImGui::InputInt("SS2", &ini->sans.SS2);
+        ImGui::SameLine();
+        HelpMarker("The number of times you've attacked Sans after getting dunked on.");
+
+        ImGui::Checkbox("EndMet", &ini->sans.EndMet);
+        ImGui::SameLine();
+        HelpMarker("Met sans in the chapel near the end of the neutral run.");
+    }
+
+    if (ImGui::CollapsingHeader("Papyrus"))
+    {
+        ImGui::InputInt("M1", &ini->papyrus.M1);
+        ImGui::SameLine();
+        HelpMarker("The number of times you've met Papyrus after meeting\nSans just outside of the ruins.");
+
+        ImGui::InputInt("PS", &ini->papyrus.PS);
+        ImGui::SameLine();
+        HelpMarker("The number of times you've spared Papyrus.");
+
+        ImGui::InputInt("PD", &ini->papyrus.PD);
+        ImGui::SameLine();
+        HelpMarker("The number of times you've dated Papyrus.");
+
+        ImGui::InputInt("PK", &ini->papyrus.PK);
+        ImGui::SameLine();
+        HelpMarker("The number of times you've killed Papyrus.");
+    }
+
+    if (ImGui::CollapsingHeader("FFFFF"))
+    {
+        ImGui::InputInt("D", &ini->fffff.D);
+        ImGui::SameLine();
+        HelpMarker("The number of times you've died to Flowey.");
+
+        const char * phase_state[8] = {"Initial state", "Light blue", "Orange", "Blue", "Purple", "Green", "Yellow", "Finished battle"};
+        int selected_phase = ini->fffff.P;
+        selected_phase = DrawCombo("P", phase_state, IM_ARRAYSIZE(phase_state), selected_phase);
+        ini->fffff.P = selected_phase;
+        ImGui::SameLine();
+        HelpMarker("Battle phase.");
+
+        ImGui::InputInt("E", &ini->fffff.E);
+        ImGui::SameLine();
+        HelpMarker("Reached the end of the battle.");
+
+        ImGui::Checkbox("F", &ini->fffff.F);
+        ImGui::SameLine();
+        HelpMarker("Trapped in Flowey's World.");
+    }
+
+    if (ImGui::CollapsingHeader("Undyne"))
+    {
+        ImGui::InputInt("UD", &ini->undyne.UD);
+        ImGui::SameLine();
+        HelpMarker("Befriended Undyne.");
+    }
+
+    if (ImGui::CollapsingHeader("Mettaton"))
+    {
+        ImGui::Checkbox("BossMet", &ini->mettaton.BossMet);
+        ImGui::SameLine();
+        HelpMarker("Faced Mettaton EX.");
+    }
+
+    if (ImGui::CollapsingHeader("Mett"))
+    {
+        ImGui::Checkbox("O", &ini->mett.O);
+        ImGui::SameLine();
+        HelpMarker("Completed Mettaton's opera section.");
+    }
+
+    if (ImGui::CollapsingHeader("MTT"))
+    {
+        ImGui::InputInt("EssayNo", &ini->mtt.EssayNo);
+        ImGui::SameLine();
+        HelpMarker("The number of times you've completed Mettaton's Essay.\nShortens the time you get to write subsequently.");
+    }
+
+    if (ImGui::CollapsingHeader("Asgore"))
+    {
+        ImGui::InputInt("KillYou", &ini->asgore.KillYou);
+        ImGui::SameLine();
+        HelpMarker("The number of times Asgore has killed you.");
+    }
+
+    if (ImGui::CollapsingHeader("Alphys"))
+    {
+        ImGui::InputInt("AD", &ini->alphys.AD);
+        ImGui::SameLine();
+        HelpMarker("Dated Alphys.");
+    }
+
+    if (ImGui::CollapsingHeader("F7"))
+    {
+        ImGui::Checkbox("F7 ", &ini->f7.F7);
+        ImGui::SameLine();
+        HelpMarker("Spared Asriel.\nPushes the start menu to its fullest stage.");
+    }
+
+    if (ImGui::CollapsingHeader("EndF"))
+    {
+        const char * endf_state[3] = {"Initial State", "Post Pacifist Credits", "Listened to Flowey's warning"};
+        int selected_endf = ini->endf.EndF;
+        selected_endf = DrawCombo("EndF ", endf_state, IM_ARRAYSIZE(endf_state), selected_endf);
+        ini->endf.EndF = selected_endf;
+    }
+
+    if (is_xbox && ImGui::CollapsingHeader("Dogshrine"))
+    {
+        ImGui::Checkbox("Donated", &ini->dogshrine.Donated);
+        ImGui::SameLine();
+        HelpMarker("Donated to the Dog Casino.\nUnlocks the Casino border.");
+    }
+    ImGui::End();
+}
+
 // kill me
 int UndertaleGUI::DrawCombo(const char *label, const char *state[], int size, int selected_state, int index_override[], int index_size)
 {
@@ -328,4 +652,16 @@ int UndertaleGUI::DrawCombo(const char *label, const char *state[], int size, in
         ImGui::EndCombo();
     }
     return selected_state;
+}
+
+void UndertaleGUI::HelpMarker(const char* desc)
+{
+    ImGui::TextDisabled("(?)");
+    if (ImGui::BeginItemTooltip())
+    {
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted(desc);
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
 }

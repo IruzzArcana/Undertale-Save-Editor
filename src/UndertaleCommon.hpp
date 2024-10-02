@@ -40,113 +40,136 @@ class UndertaleCommon
 
         struct UndertaleINIGeneral
         {
+            bool initialized;
             std::string Name;
             double Time;
-            double Room;
-            double Gameover;
-            double Kills;
-            double Love;
-            double fun;
+            int Room;
+            int Gameover;
+            int Kills;
+            int Love;
+            int fun;
             bool Tale;
-            double Won;
-            double BW;
-            double BC;
+            int Won;
+            int BW;
+            int BC;
             bool CP;
             bool BP;
             bool CH;
             bool BH;
             bool DB;
         };
+        struct UndertaleINIReset
+        {
+            bool initialized;
+            bool reset;
+            bool s_key;
+        };
         struct UndertaleINIFlowey
         {
-            double Met1;
+            bool initialized;
+            int Met1;
             bool K;
             bool NK;
             bool IK;
             bool SK;
             bool FloweyExplain1;
-            double EX;
-            double CHANGE;
+            int EX;
+            int CHANGE;
             bool AK;
             bool AF;
-            double Alter;
-            double alter2;
-            double truename;
-            double SPECIALK;
+            int Alter;
+            int alter2;
+            int truename;
+            int SPECIALK;
         };
         struct UndertaleINIToriel
         {
-            double Bscotch;
-            double TS;
-            double TK;
+            bool initialized;
+            int Bscotch;
+            int TS;
+            int TK;
         };
         struct UndertaleINISans
         {
+            bool initialized;
+            int M1;
             bool EndMet;
-            double MeetLv1;
-            double MeetLv2;
-            double MeetLv;
-            double Pass;
-            double Intro;
-            double F;
-            double MP;
-            double SK;
-            double SS;
-            double SS2;
+            int MeetLv1;
+            int MeetLv2;
+            int MeetLv;
+            int Pass;
+            int Intro;
+            int F;
+            int MP;
+            int SK;
+            int SS;
+            int SS2;
         };
         struct UndertaleINIPapyrus
         {
-            double M1;
-            double PS;
-            double PD;
-            double PK;
+            bool initialized;
+            int M1;
+            int PS;
+            int PD;
+            int PK;
         };
         struct UndertaleINIFFFFF
         {
+            bool initialized;
             bool F;
-            double D;
-            double P;
-            double E;
+            int D;
+            int P;
+            int E;
         };
         struct UndertaleINIUndyne
         {
-            double UD;
+            bool initialized;
+            int UD;
         };
         struct UndertaleINIMettaton
         {
+            bool initialized;
             bool BossMet;
         };
         struct UndertaleINIMett
         {
+            bool initialized;
             bool O;
         };
         struct UndertaleINIMTT
         {
-            double EssayNo;
+            bool initialized;
+            int EssayNo;
         };
         struct UndertaleINIAsgore
         {
-            double KillYou;
+            bool initialized;
+            int KillYou;
         };
         struct UndertaleINIAlphys
         {
-            double AD;
+            bool initialized;
+            int AD;
         };
         struct UndertaleINIF7
         {
+            bool initialized;
             bool F7;
         };
         struct UndertaleINIEndF
         {
-            double EndF;
+            bool initialized;
+            int EndF;
         };
         struct UndertaleINIDogshrine
         {
-            double Donated;
+            bool initialized;
+            bool Donated;
         };
         struct UndertaleINI
         {
             UndertaleINIGeneral general;
+            UndertaleINIReset reset;
             UndertaleINIFlowey flowey;
             UndertaleINIToriel toriel;
             UndertaleINISans sans;
@@ -155,7 +178,7 @@ class UndertaleCommon
             UndertaleINIUndyne undyne;
             UndertaleINIMettaton mettaton;
             UndertaleINIMett mett;
-            UndertaleINIMTT MTT;
+            UndertaleINIMTT mtt;
             UndertaleINIAsgore asgore;
             UndertaleINIAlphys alphys;
             UndertaleINIF7 f7;

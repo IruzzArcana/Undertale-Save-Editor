@@ -23,6 +23,7 @@ class UndertaleApp
         SDL_Texture * bgtex;
         ImGuiIO * io;
         static UndertaleCommon::UndertaleSaveFile save[3];
+        static UndertaleCommon::UndertaleINI ini;
         static bool is_running;
         static bool is_xbox;
         static bool show_editor;
