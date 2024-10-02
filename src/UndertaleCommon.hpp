@@ -40,7 +40,6 @@ class UndertaleCommon
 
         struct UndertaleINIGeneral
         {
-            bool initialized;
             std::string Name;
             double Time;
             int Room;
@@ -60,13 +59,11 @@ class UndertaleCommon
         };
         struct UndertaleINIReset
         {
-            bool initialized;
             bool reset;
             bool s_key;
         };
         struct UndertaleINIFlowey
         {
-            bool initialized;
             int Met1;
             bool K;
             bool NK;
@@ -84,14 +81,12 @@ class UndertaleCommon
         };
         struct UndertaleINIToriel
         {
-            bool initialized;
             int Bscotch;
             int TS;
             int TK;
         };
         struct UndertaleINISans
         {
-            bool initialized;
             int M1;
             bool EndMet;
             int MeetLv1;
@@ -107,7 +102,6 @@ class UndertaleCommon
         };
         struct UndertaleINIPapyrus
         {
-            bool initialized;
             int M1;
             int PS;
             int PD;
@@ -115,7 +109,6 @@ class UndertaleCommon
         };
         struct UndertaleINIFFFFF
         {
-            bool initialized;
             bool F;
             int D;
             int P;
@@ -123,47 +116,38 @@ class UndertaleCommon
         };
         struct UndertaleINIUndyne
         {
-            bool initialized;
             int UD;
         };
         struct UndertaleINIMettaton
         {
-            bool initialized;
             bool BossMet;
         };
         struct UndertaleINIMett
         {
-            bool initialized;
             bool O;
         };
         struct UndertaleINIMTT
         {
-            bool initialized;
             int EssayNo;
         };
         struct UndertaleINIAsgore
         {
-            bool initialized;
             int KillYou;
         };
         struct UndertaleINIAlphys
         {
-            bool initialized;
             int AD;
         };
         struct UndertaleINIF7
         {
-            bool initialized;
             bool F7;
         };
         struct UndertaleINIEndF
         {
-            bool initialized;
             int EndF;
         };
         struct UndertaleINIDogshrine
         {
-            bool initialized;
             bool Donated;
         };
         struct UndertaleINI

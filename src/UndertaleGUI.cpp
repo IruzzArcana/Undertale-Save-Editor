@@ -466,11 +466,11 @@ void UndertaleGUI::DrawINIEditor(const char *title, UndertaleCommon::UndertaleIN
         ImGui::SameLine();
         HelpMarker("The number of times you've met Sans with no kills.");
 
-        ImGui::InputInt("MeetLv1", &ini->sans.MeetLv2);
+        ImGui::InputInt("MeetLv2", &ini->sans.MeetLv2);
         ImGui::SameLine();
         HelpMarker("The number of times you've met Sans with kills.");
 
-        ImGui::InputInt("MeetLv", &ini->sans.MeetLv1);
+        ImGui::InputInt("MeetLv", &ini->sans.MeetLv);
         ImGui::SameLine();
         HelpMarker("The LOVE you last met Sans at.");
 

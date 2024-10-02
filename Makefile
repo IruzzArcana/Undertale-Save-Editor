@@ -1,5 +1,5 @@
 RELEASE = OFF
-CFLAGS += -Iexternal/SDL2/include -Lexternal/SDL2/lib -Iexternal/SDL2_image/include -Lexternal/SDL2_image/lib -Iexternal/imgui -Iexternal/imgui/backends -Iexternal/imgui/misc/cpp -Iexternal/NFDe/include -Iexternal/json/include
+CFLAGS += -Iexternal/SDL2/include -Lexternal/SDL2/lib -Iexternal/SDL2_image/include -Lexternal/SDL2_image/lib -Iexternal/imgui -Iexternal/imgui/backends -Iexternal/imgui/misc/cpp -Iexternal/NFDe/include -Iexternal/json -Iexternal/mINI
 LDFLAGS = -Wall -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lole32 -luuid -lshell32
 ifeq ($(RELEASE), ON)
 	LDFLAGS += -Wl,-subsystem,windows

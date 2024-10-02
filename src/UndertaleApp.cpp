@@ -116,7 +116,7 @@ void UndertaleApp::Loop()
         switch (UndertaleGUI::ShowFileDialog())
         {
             case UndertaleGUI::FILE_LOAD:
-                UndertaleSave::Load(window, save, is_xbox);
+                UndertaleSave::Load(window, save, &ini, is_xbox);
                 break;
             case UndertaleGUI::FILE_SAVE:
             case UndertaleGUI::FILE_SAVE_AS:
