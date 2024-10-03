@@ -22,6 +22,7 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
     nfdresult_t result = NFD::OpenDialog(outPath, filterItems, 2);
     if (result == NFD_OKAY)
     {
+        inidata.clear();
         fs::path filepath = outPath.get();
         std::string fileext = filepath.extension().string();
         is_json = (fileext == ".sav");
@@ -133,6 +134,13 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
                 {
                     std::string file9 = jsondata["file8"].get<std::string>();
                     JSONToStruct(file9, &save[2], is_xbox);
+                }
+                if (jsondata.contains("undertale.ini"))
+                {
+                    std::stringstream inibuffer = ReplaceStringLiterals(jsondata["undertale.ini"]);
+                    mINI::INIFile file(inibuffer);
+                    file.read(inidata);
+                    INIFileToStruct(ini);
                 }
             }
             catch (const std::exception& e)
@@ -565,6 +573,7 @@ void UndertaleSave::StructToINIFile(UndertaleCommon::UndertaleINI * ini)
 
 void UndertaleSave::INIRead(std::string * value, std::string section, std::string key)
 {
+    *value = "";
     if (inidata.has(section))
     {
         if (inidata.get(section).has(key))
@@ -576,6 +585,7 @@ void UndertaleSave::INIRead(std::string * value, std::string section, std::strin
 
 void UndertaleSave::INIRead(bool * value, std::string section, std::string key)
 {
+    *value = 0;
     if (inidata.has(section))
     {
         if (inidata.get(section).has(key))
@@ -589,6 +599,7 @@ void UndertaleSave::INIRead(bool * value, std::string section, std::string key)
 
 void UndertaleSave::INIRead(int * value, std::string section, std::string key)
 {
+    *value = 0;
     if (inidata.has(section))
     {
         if (inidata.get(section).has(key))
@@ -602,6 +613,7 @@ void UndertaleSave::INIRead(int * value, std::string section, std::string key)
 
 void UndertaleSave::INIRead(double * value, std::string section, std::string key)
 {
+    *value = 0;
     if (inidata.has(section))
     {
         if (inidata.get(section).has(key))

@@ -328,6 +328,7 @@ namespace mINI
 
 	private:
 		std::ifstream fileReadStream;
+		std::stringstream bufferReadStream;
 		T_LineDataPtr lineData;
 
 		T_LineData readFile()
@@ -380,6 +381,55 @@ namespace mINI
 			return output;
 		}
 
+		T_LineData readBuffer()
+		{
+			bufferReadStream.seekg(0, std::ios::end);
+			const std::size_t fileSize = static_cast<std::size_t>(bufferReadStream.tellg());
+			bufferReadStream.seekg(0, std::ios::beg);
+			if (fileSize >= 3) {
+				const char header[3] = {
+					static_cast<char>(bufferReadStream.get()),
+					static_cast<char>(bufferReadStream.get()),
+					static_cast<char>(bufferReadStream.get())
+				};
+				isBOM = (
+					header[0] == static_cast<char>(0xEF) &&
+					header[1] == static_cast<char>(0xBB) &&
+					header[2] == static_cast<char>(0xBF)
+				);
+			}
+			else {
+				isBOM = false;
+			}
+			std::string fileContents;
+			fileContents.resize(fileSize);
+			bufferReadStream.seekg(isBOM ? 3 : 0, std::ios::beg);
+			bufferReadStream.read(&fileContents[0], fileSize);
+			T_LineData output;
+			if (fileSize == 0)
+			{
+				return output;
+			}
+			std::string buffer;
+			buffer.reserve(50);
+			for (std::size_t i = 0; i < fileSize; ++i)
+			{
+				char& c = fileContents[i];
+				if (c == '\n')
+				{
+					output.emplace_back(buffer);
+					buffer.clear();
+					continue;
+				}
+				if (c != '\0' && c != '\r')
+				{
+					buffer += c;
+				}
+			}
+			output.emplace_back(buffer);
+			return output;
+		}
+
 	public:
 		INIReader(std::string const& filename, bool keepLineData = false)
 		{
@@ -389,42 +439,86 @@ namespace mINI
 				lineData = std::make_shared<T_LineData>();
 			}
 		}
+
+		INIReader(std::stringstream const& filebuffer, bool keepLineData = false)
+		{
+			bufferReadStream << filebuffer.str();
+			if (keepLineData)
+			{
+				lineData = std::make_shared<T_LineData>();
+			}
+		}
+
 		~INIReader() { }
 
 		bool operator>>(INIStructure& data)
 		{
-			if (!fileReadStream.is_open())
+			if (!fileReadStream.is_open() && bufferReadStream.str().empty())
 			{
 				return false;
 			}
-			T_LineData fileLines = readFile();
-			std::string section;
-			bool inSection = false;
-			INIParser::T_ParseValues parseData;
-			for (auto const& line : fileLines)
+			if (fileReadStream.is_open())
 			{
-				auto parseResult = INIParser::parseLine(line, parseData);
-				if (parseResult == INIParser::PDataType::PDATA_SECTION)
+				T_LineData fileLines = readFile();
+				std::string section;
+				bool inSection = false;
+				INIParser::T_ParseValues parseData;
+				for (auto const& line : fileLines)
 				{
-					inSection = true;
-					data[section = parseData.first];
-				}
-				else if (inSection && parseResult == INIParser::PDataType::PDATA_KEYVALUE)
-				{
-					auto const& key = parseData.first;
-					auto const& value = parseData.second;
-					data[section][key] = value;
-				}
-				if (lineData && parseResult != INIParser::PDataType::PDATA_UNKNOWN)
-				{
-					if (parseResult == INIParser::PDataType::PDATA_KEYVALUE && !inSection)
+					auto parseResult = INIParser::parseLine(line, parseData);
+					if (parseResult == INIParser::PDataType::PDATA_SECTION)
 					{
-						continue;
+						inSection = true;
+						data[section = parseData.first];
 					}
-					lineData->emplace_back(line);
+					else if (inSection && parseResult == INIParser::PDataType::PDATA_KEYVALUE)
+					{
+						auto const& key = parseData.first;
+						auto const& value = parseData.second;
+						data[section][key] = value;
+					}
+					if (lineData && parseResult != INIParser::PDataType::PDATA_UNKNOWN)
+					{
+						if (parseResult == INIParser::PDataType::PDATA_KEYVALUE && !inSection)
+						{
+							continue;
+						}
+						lineData->emplace_back(line);
+					}
 				}
+				return true;
 			}
-			return true;
+			else
+			{
+				T_LineData fileLines = readBuffer();
+				std::string section;
+				bool inSection = false;
+				INIParser::T_ParseValues parseData;
+				for (auto const& line : fileLines)
+				{
+					auto parseResult = INIParser::parseLine(line, parseData);
+					if (parseResult == INIParser::PDataType::PDATA_SECTION)
+					{
+						inSection = true;
+						data[section = parseData.first];
+					}
+					else if (inSection && parseResult == INIParser::PDataType::PDATA_KEYVALUE)
+					{
+						auto const& key = parseData.first;
+						auto const& value = parseData.second;
+						data[section][key] = value;
+					}
+					if (lineData && parseResult != INIParser::PDataType::PDATA_UNKNOWN)
+					{
+						if (parseResult == INIParser::PDataType::PDATA_KEYVALUE && !inSection)
+						{
+							continue;
+						}
+						lineData->emplace_back(line);
+					}
+				}
+				return true;
+			}
 		}
 		T_LineDataPtr getLines()
 		{
@@ -734,10 +828,15 @@ namespace mINI
 	{
 	private:
 		std::string filename;
+		std::stringstream filebuffer;
 
 	public:
 		INIFile(std::string const& filename)
 		: filename(filename)
+		{ }
+
+		INIFile(std::stringstream const& filebuffer)
+		: filebuffer(filebuffer.str())
 		{ }
 
 		~INIFile() { }
@@ -748,12 +847,20 @@ namespace mINI
 			{
 				data.clear();
 			}
-			if (filename.empty())
+			if (filename.empty() && filebuffer.str().empty())
 			{
 				return false;
 			}
-			INIReader reader(filename);
-			return reader >> data;
+			if (!filename.empty())
+			{
+				INIReader reader(filename);
+				return reader >> data;
+			}
+			else
+			{
+				INIReader reader(filebuffer);
+				return reader >> data;
+			}
 		}
 		bool generate(INIStructure const& data, bool pretty = false) const
 		{
