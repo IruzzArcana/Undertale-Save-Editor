@@ -388,7 +388,7 @@ std::stringstream UndertaleSave::ReplaceStringLiterals(std::string str)
    return buffer;
 }
 
-int UndertaleSave::INIFileToStruct(UndertaleCommon::UndertaleINI * ini, bool is_xbox)
+void UndertaleSave::INIFileToStruct(UndertaleCommon::UndertaleINI * ini, bool is_xbox)
 {
     INIRead(&ini->general.Name, "General", "Name");
     INIRead(&ini->general.Time, "General", "Time");
@@ -462,14 +462,14 @@ int UndertaleSave::INIFileToStruct(UndertaleCommon::UndertaleINI * ini, bool is_
     INIRead(&ini->asgore.KillYou, "Asgore", "KillYou");
 
     INIRead(&ini->alphys.AD, "Alphys", "AD");
+    INIRead(&ini->alphys.M, "Alphys", "M");
+    INIRead(&ini->alphys.R, "Alphys", "R");
 
     INIRead(&ini->f7.F7, "F7", "F7");
 
     INIRead(&ini->endf.EndF, "EndF", "EndF");
 
     INIRead(&ini->dogshrine.Donated, "Dogshrine", "Donated");
-
-    return 0;
 }
 
 void UndertaleSave::INIRead(std::string * value, std::string section, std::string key)

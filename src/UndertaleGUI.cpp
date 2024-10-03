@@ -111,7 +111,7 @@ void UndertaleGUI::DrawSaveEditor(bool enabled, UndertaleCommon::UndertaleSaveFi
         if (current_file < 3)
             DrawFileEditor(title.c_str(), save, is_xbox);
         else
-        DrawINIEditor(title.c_str(), ini, is_xbox);
+            DrawINIEditor(title.c_str(), ini, is_xbox);
     }
 }
 
@@ -462,6 +462,10 @@ void UndertaleGUI::DrawINIEditor(const char *title, UndertaleCommon::UndertaleIN
         ImGui::SameLine();
         HelpMarker("Number of times you've met Sans after exiting the ruins.");
 
+        ImGui::Checkbox("EndMet", &ini->sans.EndMet);
+        ImGui::SameLine();
+        HelpMarker("Met sans in the chapel near the end of the neutral run.");
+
         ImGui::InputInt("MeetLv1", &ini->sans.MeetLv1);
         ImGui::SameLine();
         HelpMarker("The number of times you've met Sans with no kills.");
@@ -504,10 +508,6 @@ void UndertaleGUI::DrawINIEditor(const char *title, UndertaleCommon::UndertaleIN
         ImGui::InputInt("SS2", &ini->sans.SS2);
         ImGui::SameLine();
         HelpMarker("The number of times you've attacked Sans after getting dunked on.");
-
-        ImGui::Checkbox("EndMet", &ini->sans.EndMet);
-        ImGui::SameLine();
-        HelpMarker("Met sans in the chapel near the end of the neutral run.");
     }
 
     if (ImGui::CollapsingHeader("Papyrus"))
@@ -591,6 +591,21 @@ void UndertaleGUI::DrawINIEditor(const char *title, UndertaleCommon::UndertaleIN
         ImGui::InputInt("AD", &ini->alphys.AD);
         ImGui::SameLine();
         HelpMarker("Dated Alphys.");
+
+        const char * mewmew_state[3] = {"Initial State", "Mew Mew Spared", "Mew Mew Killed"};
+        int mewmew_index[IM_ARRAYSIZE(mewmew_state)] = {0, 2, 3};
+        int selected_mewmew = ini->alphys.M;
+        selected_mewmew = DrawCombo("M", mewmew_state, IM_ARRAYSIZE(mewmew_state), selected_mewmew, mewmew_index, IM_ARRAYSIZE(mewmew_index));
+        ini->alphys.M = selected_mewmew;
+        ImGui::SameLine();
+        HelpMarker("Defeated Mad Mew Mew.\nUsed for unlocking the Mew Mew Border.");
+
+        const char * adate_state[3] = {" ", "Real", "Not Real"};
+        int selected_adate = ini->alphys.R;
+        selected_adate = DrawCombo("R", adate_state, IM_ARRAYSIZE(adate_state), selected_adate);
+        ini->alphys.R = selected_adate;
+        ImGui::SameLine();
+        HelpMarker("ANIME'S REAL, RIGHT?!?!\nUsed for naming the Mew Mew Border.");
     }
 
     if (ImGui::CollapsingHeader("F7"))

@@ -137,6 +137,8 @@ class UndertaleCommon
         struct UndertaleINIAlphys
         {
             int AD;
+            int M;
+            int R;
         };
         struct UndertaleINIF7
         {

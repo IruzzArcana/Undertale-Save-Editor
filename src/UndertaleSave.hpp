@@ -13,7 +13,7 @@ class UndertaleSave
         static int FileToStruct(std::string path, UndertaleCommon::UndertaleSaveFile * save, bool is_xbox);
         static int StructToFile(std::string path, UndertaleCommon::UndertaleSaveFile * save, bool is_xbox);
         static int JSONToStruct(std::string data, UndertaleCommon::UndertaleSaveFile * save, bool is_xbox);
-        static int INIFileToStruct(UndertaleCommon::UndertaleINI * ini, bool is_xbox);
+        static void INIFileToStruct(UndertaleCommon::UndertaleINI * ini, bool is_xbox);
 
         static void INIRead(std::string * value, std::string section, std::string key);
         static void INIRead(bool * value, std::string section, std::string key);
