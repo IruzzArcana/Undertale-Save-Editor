@@ -138,7 +138,7 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
                 if (jsondata.contains("undertale.ini"))
                 {
                     std::stringstream inibuffer = ReplaceStringLiterals(jsondata["undertale.ini"]);
-                    mINI::INIFile file(inibuffer);
+                    mINI::INIFile file(&inibuffer);
                     file.read(inidata);
                     INIFileToStruct(ini);
                 }
@@ -214,6 +214,14 @@ void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
                 jsondata[file] = buffer.str();
             }
             i++;
+        }
+        if (jsondata.contains("undertale.ini"))
+        {
+            StructToINIFile(ini);
+            std::stringstream ini_buffer;
+            mINI::INIFile file(&ini_buffer);
+            file.writebuffer(inidata);
+            jsondata["undertale.ini"] = ini_buffer.str();
         }
         outfile << jsondata;
         outfile.close();

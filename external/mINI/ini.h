@@ -601,6 +601,7 @@ namespace mINI
 		using T_LineDataPtr = std::shared_ptr<T_LineData>;
 
 		std::string filename;
+		std::stringstream * filebuffer;
 
 		T_LineData getLazyOutput(T_LineDataPtr const& lineData, INIStructure& data, INIStructure& original)
 		{
@@ -765,57 +766,103 @@ namespace mINI
 		: filename(filename)
 		{
 		}
+		INIWriter(std::stringstream * filebuffer)
+		: filebuffer(filebuffer)
+		{
+		}
 		~INIWriter() { }
 
 		bool operator<<(INIStructure& data)
 		{
-			struct stat buf;
-			bool fileExists = (stat(filename.c_str(), &buf) == 0);
-			if (!fileExists)
+			if (!filename.empty())
 			{
-				INIGenerator generator(filename);
-				generator.prettyPrint = prettyPrint;
-				return generator << data;
-			}
-			INIStructure originalData;
-			T_LineDataPtr lineData;
-			bool readSuccess = false;
-			bool fileIsBOM = false;
-			{
-				INIReader reader(filename, true);
-				if ((readSuccess = reader >> originalData))
+				struct stat buf;
+				bool fileExists = (stat(filename.c_str(), &buf) == 0);
+				if (!fileExists)
 				{
-					lineData = reader.getLines();
-					fileIsBOM = reader.isBOM;
+					INIGenerator generator(filename);
+					generator.prettyPrint = prettyPrint;
+					return generator << data;
 				}
-			}
-			if (!readSuccess)
-			{
-				return false;
-			}
-			T_LineData output = getLazyOutput(lineData, data, originalData);
-			std::ofstream fileWriteStream(filename, std::ios::out | std::ios::binary);
-			if (fileWriteStream.is_open())
-			{
-				if (fileIsBOM) {
-					const char utf8_BOM[3] = {
-						static_cast<char>(0xEF),
-						static_cast<char>(0xBB),
-						static_cast<char>(0xBF)
-					};
-					fileWriteStream.write(utf8_BOM, 3);
-				}
-				if (output.size())
+				INIStructure originalData;
+				T_LineDataPtr lineData;
+				bool readSuccess = false;
+				bool fileIsBOM = false;
 				{
-					auto line = output.begin();
-					for (;;)
+					INIReader reader(filename, true);
+					if ((readSuccess = reader >> originalData))
 					{
-						fileWriteStream << *line;
-						if (++line == output.end())
+						lineData = reader.getLines();
+						fileIsBOM = reader.isBOM;
+					}
+				}
+				if (!readSuccess)
+				{
+					return false;
+				}
+				T_LineData output = getLazyOutput(lineData, data, originalData);
+				std::ofstream fileWriteStream(filename, std::ios::out | std::ios::binary);
+				if (fileWriteStream.is_open())
+				{
+					if (fileIsBOM) {
+						const char utf8_BOM[3] = {
+							static_cast<char>(0xEF),
+							static_cast<char>(0xBB),
+							static_cast<char>(0xBF)
+						};
+						fileWriteStream.write(utf8_BOM, 3);
+					}
+					if (output.size())
+					{
+						auto line = output.begin();
+						for (;;)
 						{
-							break;
+							fileWriteStream << *line;
+							if (++line == output.end())
+							{
+								break;
+							}
+							fileWriteStream << INIStringUtil::endl;
 						}
-						fileWriteStream << INIStringUtil::endl;
+					}
+					return true;
+				}
+			}
+			else
+			{
+				auto it = data.begin();
+				for (;;)
+				{
+					auto const& section = it->first;
+					auto const& collection = it->second;
+					*filebuffer << "[" << section << "]";
+
+					if (collection.size())
+					{
+						*filebuffer << "\r\n";
+						auto it2 = collection.begin();
+						for (;;)
+						{
+							auto key = it2->first;
+							INIStringUtil::replace(key, "=", "\\=");
+							auto value = it2->second;
+							INIStringUtil::trim(value);
+							*filebuffer << key << ((prettyPrint ? " = " : "=")) << value;
+							if (++it2 == collection.end())
+							{
+								break;
+							}
+							*filebuffer << "\r\n";
+						}
+					}
+					if (++it == data.end())
+					{
+						break;
+					}
+					*filebuffer << "\r\n";
+					if (prettyPrint)
+					{
+						*filebuffer << "\r\n";
 					}
 				}
 				return true;
@@ -828,15 +875,15 @@ namespace mINI
 	{
 	private:
 		std::string filename;
-		std::stringstream filebuffer;
+		std::stringstream * filebuffer;
 
 	public:
 		INIFile(std::string const& filename)
 		: filename(filename)
 		{ }
 
-		INIFile(std::stringstream const& filebuffer)
-		: filebuffer(filebuffer.str())
+		INIFile(std::stringstream * filebuffer)
+		: filebuffer(filebuffer)
 		{ }
 
 		~INIFile() { }
@@ -847,7 +894,7 @@ namespace mINI
 			{
 				data.clear();
 			}
-			if (filename.empty() && filebuffer.str().empty())
+			if (filename.empty() && filebuffer->str().empty())
 			{
 				return false;
 			}
@@ -858,7 +905,7 @@ namespace mINI
 			}
 			else
 			{
-				INIReader reader(filebuffer);
+				INIReader reader(*filebuffer);
 				return reader >> data;
 			}
 		}
@@ -879,6 +926,12 @@ namespace mINI
 				return false;
 			}
 			INIWriter writer(filename);
+			writer.prettyPrint = pretty;
+			return writer << data;
+		}
+		bool writebuffer(INIStructure& data, bool pretty = false) const
+		{
+			INIWriter writer(filebuffer);
 			writer.prettyPrint = pretty;
 			return writer << data;
 		}
