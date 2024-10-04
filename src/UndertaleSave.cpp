@@ -17,6 +17,7 @@ mINI::INIStructure UndertaleSave::configinidata;
 
 void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI *ini, UndertaleCommon::UndertaleConfigINI *config, bool &is_xbox)
 {
+    int num_lines = 0;
     NFD::Guard nfdGuard;
     NFD::UniquePath outPath;
     nfdresult_t result = NFD::PickFolder(outPath);
@@ -44,7 +45,6 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
             {
                 std::ifstream infile(path);
                 std::string line;
-                int num_lines;
                 if (!fs::exists(path))
                 {
                     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not find file0!", window);
@@ -57,6 +57,8 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
                 }
                 while (getline(infile, line))
                     num_lines++;
+                
+                std::cout << num_lines << std::endl;
 
                 is_xbox = (num_lines == 551);
                 infile.close();

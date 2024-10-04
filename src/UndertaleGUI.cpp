@@ -171,10 +171,14 @@ void UndertaleGUI::DrawFileEditor(const char *title, UndertaleCommon::UndertaleS
             save->menuchoice[2] = cellphone;
             if (cellphone)
             {
+                const char * cell_state[10] = {"NONE", "Say Hello", "Puzzle Help", "About Yourself", "Call Her \"Mom\"", "Flirt", "Toriel's Phone", "Papyrus's Phone", "Dimensional Box A", "Dimensional Box B"};
+                int cell_index[IM_ARRAYSIZE(cell_state)] = {0, 201, 202, 203, 204, 205, 206, 210, 220, 221};
                 for (int i = 0; i < 8; i++)
                 {
                     std::string label = "Slot " + std::to_string(i + 1);
-                    ImGui::InputInt(label.c_str(), &save->phone[i]);
+                    int selected_cell = save->phone[i];
+                    selected_cell = DrawCombo(label.c_str(), cell_state, IM_ARRAYSIZE(cell_state), selected_cell, cell_index, IM_ARRAYSIZE(cell_index));
+                    save->phone[i] = selected_cell;
                 }
             }
             ImGui::EndTabItem();
