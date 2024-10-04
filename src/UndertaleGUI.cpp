@@ -667,8 +667,8 @@ void UndertaleGUI::DrawConfigINIEditor(const char * title, UndertaleCommon::Unde
     selected_language = DrawCombo("LANGUAGE", languages, IM_ARRAYSIZE(languages), selected_language);
     config->general.lang = lang[selected_language];
 
-    const char * borders[15] = {"NONE", "Simple", "Sepia", "Dynamic", "Ruins", "Snowdin", "Waterfall", "Hotland", "Castle", "True lab", "Beauty", "Real/Not Real", "Super Dog, Hoi", "Casino", "?????"};
-    int selected_border = (config->general.sb > 13 ? 14 : config->general.sb);
+    const char * borders[14] = {"NONE", "Simple", "Sepia", "Dynamic", "Ruins", "Snowdin", "Waterfall", "Hotland", "Castle", "True lab", "Beauty", "Real/Not Real", "Super Dog, Hoi", "Casino"};
+    int selected_border = config->general.sb;
     selected_border = DrawCombo("BORDER", borders, IM_ARRAYSIZE(borders) - 1, selected_border);
     config->general.sb = selected_border;
 
@@ -689,6 +689,9 @@ void UndertaleGUI::DrawConfigINIEditor(const char * title, UndertaleCommon::Unde
 // kill me
 int UndertaleGUI::DrawCombo(const char *label, const char *state[], int size, int selected_state, int index_override[], int index_size)
 {
+    if (selected_state < 0 || selected_state > size)
+        selected_state = 0;
+
     int selected = selected_state;
     if (index_size > 0)
     {
