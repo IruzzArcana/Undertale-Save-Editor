@@ -187,6 +187,7 @@ class UndertaleCommon
         };
         struct UndertaleConfigINI
         {
+            bool initialized;
             UndertaleConfigINIGeneral general;
             UndertaleConfigINIjoypad1 joypad1;
         };

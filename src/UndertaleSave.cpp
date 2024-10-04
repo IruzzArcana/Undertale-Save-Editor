@@ -15,166 +15,174 @@ nlohmann::json UndertaleSave::jsondata;
 mINI::INIStructure UndertaleSave::inidata;
 mINI::INIStructure UndertaleSave::configinidata;
 
-void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI * ini, UndertaleCommon::UndertaleConfigINI * config, bool &is_xbox)
+void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI *ini, UndertaleCommon::UndertaleConfigINI *config, bool &is_xbox)
 {
     NFD::Guard nfdGuard;
     NFD::UniquePath outPath;
-    nfdfilteritem_t filterItems[2] = {{"PC Save", "*"}, {"Console Save", "sav"}};
-    nfdresult_t result = NFD::OpenDialog(outPath, filterItems, 2);
+    nfdresult_t result = NFD::PickFolder(outPath);
+    if (result == NFD_OKAY)
+    {
+        inidata.clear();
+        configinidata.clear();
+        fs::path filepath = outPath.get();
+
+        dir = filepath.string();
+        std::vector<std::string> matchingFiles;
+
+        for (const auto &entry : fs::directory_iterator(dir))
+        {
+            std::string filename = entry.path().filename().string();
+            if ((filename.rfind("file0", 0) == 0) || (filename.rfind("file8", 0) == 0) || (filename.rfind("file9", 0) == 0))
+            {
+                matchingFiles.push_back(filename);
+            }
+        }
+        for (std::string file : matchingFiles)
+        {
+            fs::path path = fs::path(dir) / file;
+            if (file == "file0")
+            {
+                std::ifstream infile(path);
+                std::string line;
+                int num_lines;
+                if (!fs::exists(path))
+                {
+                    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not find file0!", window);
+                    return;
+                }
+                if (!infile.is_open())
+                {
+                    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load file0!", window);
+                    return;
+                }
+                while (getline(infile, line))
+                    num_lines++;
+
+                is_xbox = (num_lines == 551);
+                infile.close();
+
+                if (FileToStruct(path.string(), &save[0], is_xbox) != 0)
+                {
+                    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load file0!", window);
+                    return;
+                }
+            }
+
+            else if (file == "file9")
+            {
+                if (FileToStruct(path.string(), &save[1], is_xbox) != 0)
+                {
+                    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load file9!", window);
+                    return;
+                }
+            }
+
+            else if (file == "file8")
+            {
+                if (FileToStruct(path.string(), &save[2], is_xbox) != 0)
+                {
+                    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load file8!", window);
+                    return;
+                }
+            }
+        }
+
+        fs::path ini_path = fs::path(dir) / "undertale.ini";
+        if (fs::exists(ini_path))
+        {
+            mINI::INIFile file(ini_path.string());
+            file.read(inidata);
+            INIFileToStruct(ini);
+        }
+
+        fs::path config_path = fs::path(dir) / "config.ini";
+        if (fs::exists(config_path))
+        {
+            mINI::INIFile configfile(config_path.string());
+            configfile.read(configinidata);
+            ConfigINIFileToStruct(config);
+        }
+    }
+}
+
+void UndertaleSave::ConsoleLoad(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI *ini, UndertaleCommon::UndertaleConfigINI *config, bool &is_xbox)
+{
+    NFD::Guard nfdGuard;
+    NFD::UniquePath outPath;
+    nfdfilteritem_t filterItems[1] = {{"Console Save", "sav"}};
+    nfdresult_t result = NFD::OpenDialog(outPath, filterItems, 1);
     if (result == NFD_OKAY)
     {
         inidata.clear();
         configinidata.clear();
         fs::path filepath = outPath.get();
         std::string fileext = filepath.extension().string();
-        is_json = (fileext == ".sav");
+        is_json = true;
 
-        if (!is_json)
+        dir = filepath.string();
+        std::ifstream jsonfile(dir);
+        int num_lines;
+
+        if (!jsonfile.is_open())
         {
-            dir = filepath.parent_path().string();
-            std::vector<std::string> matchingFiles;
-
-            for (const auto &entry : fs::directory_iterator(dir))
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load undertale.sav!", window);
+        }
+        try
+        {
+            jsonfile >> jsondata;
+            jsonfile.close();
+            if (!jsondata.contains("file0"))
             {
-                std::string filename = entry.path().filename().string();
-                if ((filename.rfind("file0", 0) == 0) || (filename.rfind("file8", 0) == 0) || (filename.rfind("file9", 0) == 0))
-                {
-                    matchingFiles.push_back(filename);
-                }
+                SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not find file0!", window);
+                return;
             }
-            for (std::string file : matchingFiles)
+            std::string file0 = jsondata["file0"].get<std::string>();
+            std::stringstream buffer = ReplaceStringLiterals(file0);
+            std::string line;
+
+            while (std::getline(buffer, line))
+                num_lines++;
+
+            is_xbox = (num_lines == 551);
+            JSONToStruct(file0, &save[0], is_xbox);
+
+            if (jsondata.contains("file9"))
             {
-                fs::path path = fs::path(dir) / file;
-                if (file == "file0")
-                {
-                    std::ifstream infile(path);
-                    std::string line;
-                    int num_lines;
-                    if (!fs::exists(path))
-                    {
-                        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not find file0!", window);
-                        return;
-                    }
-                    if (!infile.is_open())
-                    {
-                        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load file0!", window);
-                        return;
-                    }
-                    while (getline(infile, line))
-                        num_lines++;
-
-                    is_xbox = (num_lines == 551);
-                    infile.close();
-
-                    if (FileToStruct(path.string(), &save[0], is_xbox) != 0)
-                    {
-                        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load file0!", window);
-                        return;
-                    }
-                }
-
-                else if (file == "file9")
-                {
-                    if (FileToStruct(path.string(), &save[1], is_xbox) != 0)
-                    {
-                        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load file9!", window);
-                        return;
-                    }
-                }
-
-                else if (file == "file8")
-                {
-                    if (FileToStruct(path.string(), &save[2], is_xbox) != 0)
-                    {
-                        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load file8!", window);
-                        return;
-                    }
-                }
+                std::string file9 = jsondata["file9"].get<std::string>();
+                JSONToStruct(file9, &save[1], is_xbox);
             }
 
-            fs::path ini_path = fs::path(dir) / "undertale.ini";
-            if (fs::exists(ini_path))
+            if (jsondata.contains("file8"))
             {
-                mINI::INIFile file(ini_path.string());
-                file.read(inidata);
+                std::string file9 = jsondata["file8"].get<std::string>();
+                JSONToStruct(file9, &save[2], is_xbox);
+            }
+
+            if (jsondata.contains("undertale.ini"))
+            {
+                std::stringstream inibuffer = ReplaceStringLiterals(jsondata["undertale.ini"]);
+                mINI::INIFile file(&inibuffer);
+                file.readbuffer(inidata);
                 INIFileToStruct(ini);
             }
 
-            fs::path config_path = fs::path(dir) / "config.ini";
-            if (fs::exists(config_path))
+            if (jsondata.contains("config.ini"))
             {
-                mINI::INIFile configfile(config_path.string());
-                configfile.read(configinidata);
+                std::stringstream configinibuffer = ReplaceStringLiterals(jsondata["config.ini"]);
+                mINI::INIFile configfile(&configinibuffer);
+                configfile.readbuffer(configinidata);
                 ConfigINIFileToStruct(config);
             }
         }
-        else
+        catch (const std::exception &e)
         {
-            dir = filepath.string();
-            std::ifstream jsonfile(dir);        
-            int num_lines;
-
-            if (!jsonfile.is_open())
-            {
-                SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load undertale.sav!", window);
-            }
-            try
-            {
-                jsonfile >> jsondata;
-                jsonfile.close();
-                if (!jsondata.contains("file0"))
-                {
-                    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not find file0!", window);
-                    return;
-                }
-                std::string file0 = jsondata["file0"].get<std::string>();
-                std::stringstream buffer = ReplaceStringLiterals(file0);
-                std::string line;
-                
-                while (std::getline(buffer, line))
-                    num_lines++;
-                
-                is_xbox = (num_lines == 551);
-                JSONToStruct(file0, &save[0], is_xbox);
-                
-                if (jsondata.contains("file9"))
-                {
-                    std::string file9 = jsondata["file9"].get<std::string>();
-                    JSONToStruct(file9, &save[1], is_xbox);
-                }
-
-                if (jsondata.contains("file8"))
-                {
-                    std::string file9 = jsondata["file8"].get<std::string>();
-                    JSONToStruct(file9, &save[2], is_xbox);
-                }
-
-                if (jsondata.contains("undertale.ini"))
-                {
-                    std::stringstream inibuffer = ReplaceStringLiterals(jsondata["undertale.ini"]);
-                    mINI::INIFile file(&inibuffer);
-                    file.readbuffer(inidata);
-                    INIFileToStruct(ini);
-                }
-
-                if (jsondata.contains("config.ini"))
-                {
-                    std::stringstream configinibuffer = ReplaceStringLiterals(jsondata["config.ini"]);
-                    mINI::INIFile configfile(&configinibuffer);
-                    configfile.readbuffer(configinidata);
-                    ConfigINIFileToStruct(config);
-                }
-            }
-            catch (const std::exception& e)
-            {
-                SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Failed to parse *.sav file!", window);
-                jsonfile.close();
-            }
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Failed to parse *.sav file!", window);
+            jsonfile.close();
         }
     }
 }
 
-void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI * ini, UndertaleCommon::UndertaleConfigINI * config, bool is_xbox, bool save_as)
+void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI *ini, UndertaleCommon::UndertaleConfigINI *config, bool is_xbox, bool save_as)
 {
     std::string files[3] = {"file0", "file9", "file8"};
     fs::path filepath;
@@ -183,20 +191,16 @@ void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
     {
         NFD::Guard nfdGuard;
         NFD::UniquePath outPath;
-        nfdfilteritem_t filterItems[2] = {{"PC Save", "*"}, {"Console Save", "sav"}};
-        nfdresult_t result = NFD::SaveDialog(outPath, filterItems, 2);
+        nfdresult_t result = NFD::PickFolder(outPath);
         if (result == NFD_OKAY)
         {
             filepath = outPath.get();
             std::string fileext = filepath.extension().string();
-            is_json = (fileext == ".sav");
-            if (!is_json)
-                dir = filepath.parent_path().string();
-            else
-                dir = filepath.string();
+            is_json = false;
+            dir = filepath.string();
         }
     }
-    
+
     if (!is_json)
     {
         int i = 0;
@@ -212,7 +216,7 @@ void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
         }
 
         fs::path ini_path = fs::path(dir) / "undertale.ini";
-        if (fs::exists(ini_path))
+        if (ini->initialized)
         {
             mINI::INIFile file(ini_path.string());
             StructToINIFile(ini);
@@ -220,7 +224,7 @@ void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
         }
 
         fs::path config_path = fs::path(dir) / "config.ini";
-        if (fs::exists(config_path))
+        if (config->initialized)
         {
             mINI::INIFile configfile(config_path.string());
             StructToConfigINIFile(config);
@@ -240,7 +244,7 @@ void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
         int i = 0;
         for (std::string file : files)
         {
-            if (jsondata.contains(file))
+            if (save[i].initialized)
             {
                 std::stringstream buffer = StructToJSON(&save[i], is_xbox);
                 jsondata[file] = buffer.str();
@@ -248,7 +252,7 @@ void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
             i++;
         }
 
-        if (jsondata.contains("undertale.ini"))
+        if (ini->initialized)
         {
             StructToINIFile(ini);
             std::stringstream ini_buffer;
@@ -257,7 +261,7 @@ void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
             jsondata["undertale.ini"] = ini_buffer.str();
         }
 
-        if (jsondata.contains("config.ini"))
+        if (config->initialized)
         {
             StructToINIFile(ini);
             std::stringstream configini_buffer;
@@ -269,6 +273,26 @@ void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
         outfile << jsondata;
         outfile.close();
     }
+}
+
+void UndertaleSave::ConsoleSave(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI *ini, UndertaleCommon::UndertaleConfigINI *config, bool is_xbox)
+{
+    std::string files[3] = {"file0", "file9", "file8"};
+    fs::path filepath;
+
+    NFD::Guard nfdGuard;
+    NFD::UniquePath outPath;
+    nfdfilteritem_t filterItems[1] = {{"Console Save", "sav"}};
+    nfdresult_t result = NFD::SaveDialog(outPath, filterItems, 1);
+    if (result == NFD_OKAY)
+    {
+        filepath = outPath.get();
+        std::string fileext = filepath.extension().string();
+        is_json = true;
+        dir = filepath.string();
+        Save(window, save, ini, config, is_xbox, false);
+    }
+
 }
 
 int UndertaleSave::FileToStruct(std::string path, UndertaleCommon::UndertaleSaveFile *save, bool is_xbox)
@@ -362,7 +386,7 @@ int UndertaleSave::StructToFile(std::string path, UndertaleCommon::UndertaleSave
     return 0;
 }
 
-int UndertaleSave::JSONToStruct(std::string data, UndertaleCommon::UndertaleSaveFile * save, bool is_xbox)
+int UndertaleSave::JSONToStruct(std::string data, UndertaleCommon::UndertaleSaveFile *save, bool is_xbox)
 {
     std::stringstream buffer = ReplaceStringLiterals(data);
 
@@ -403,7 +427,7 @@ int UndertaleSave::JSONToStruct(std::string data, UndertaleCommon::UndertaleSave
     return 0;
 }
 
-std::stringstream UndertaleSave::StructToJSON(UndertaleCommon::UndertaleSaveFile * save, bool is_xbox)
+std::stringstream UndertaleSave::StructToJSON(UndertaleCommon::UndertaleSaveFile *save, bool is_xbox)
 {
     std::stringstream buffer;
     buffer << save->name << "\r\n";
@@ -444,17 +468,17 @@ std::stringstream UndertaleSave::StructToJSON(UndertaleCommon::UndertaleSaveFile
 
 std::stringstream UndertaleSave::ReplaceStringLiterals(std::string str)
 {
-   size_t pos;
-   while (pos = str.find("\\r\\n", pos) != std::string::npos)
-   {
-       str.replace(pos, 4, "\n");
-       pos += 1;
-   }
-   std::stringstream buffer(str);
-   return buffer;
+    size_t pos;
+    while (pos = str.find("\\r\\n", pos) != std::string::npos)
+    {
+        str.replace(pos, 4, "\n");
+        pos += 1;
+    }
+    std::stringstream buffer(str);
+    return buffer;
 }
 
-void UndertaleSave::INIFileToStruct(UndertaleCommon::UndertaleINI * ini)
+void UndertaleSave::INIFileToStruct(UndertaleCommon::UndertaleINI *ini)
 {
     INIRead(&inidata, &ini->general.Name, "General", "Name");
     INIRead(&inidata, &ini->general.Time, "General", "Time");
@@ -536,9 +560,11 @@ void UndertaleSave::INIFileToStruct(UndertaleCommon::UndertaleINI * ini)
     INIRead(&inidata, &ini->endf.EndF, "EndF", "EndF");
 
     INIRead(&inidata, &ini->dogshrine.Donated, "Dogshrine", "Donated");
+
+    ini->initialized = true;
 }
 
-void UndertaleSave::StructToINIFile(UndertaleCommon::UndertaleINI * ini)
+void UndertaleSave::StructToINIFile(UndertaleCommon::UndertaleINI *ini)
 {
     INIWrite(&inidata, &ini->general.Name, "General", "Name");
     INIWrite(&inidata, &ini->general.Time, "General", "Time");
@@ -622,7 +648,7 @@ void UndertaleSave::StructToINIFile(UndertaleCommon::UndertaleINI * ini)
     INIWrite(&inidata, &ini->dogshrine.Donated, "Dogshrine", "Donated");
 }
 
-void UndertaleSave::ConfigINIFileToStruct(UndertaleCommon::UndertaleConfigINI * config)
+void UndertaleSave::ConfigINIFileToStruct(UndertaleCommon::UndertaleConfigINI *config)
 {
     INIRead(&configinidata, &config->general.lang, "General", "lang");
     INIRead(&configinidata, &config->general.sb, "General", "sb");
@@ -632,9 +658,11 @@ void UndertaleSave::ConfigINIFileToStruct(UndertaleCommon::UndertaleConfigINI * 
     INIRead(&configinidata, &config->joypad1.b2, "joypad1", "b2");
     INIRead(&configinidata, &config->joypad1.as, "joypad1", "as");
     INIRead(&configinidata, &config->joypad1.jd, "joypad1", "jd");
+
+    config->initialized = true;
 }
 
-void UndertaleSave::StructToConfigINIFile(UndertaleCommon::UndertaleConfigINI * config)
+void UndertaleSave::StructToConfigINIFile(UndertaleCommon::UndertaleConfigINI *config)
 {
     INIWrite(&configinidata, &config->general.lang, "General", "lang");
     INIWrite(&configinidata, &config->general.sb, "General", "sb");
@@ -646,7 +674,7 @@ void UndertaleSave::StructToConfigINIFile(UndertaleCommon::UndertaleConfigINI * 
     INIWrite(&configinidata, &config->joypad1.jd, "joypad1", "jd");
 }
 
-void UndertaleSave::INIRead(mINI::INIStructure * ini, std::string * value, std::string section, std::string key)
+void UndertaleSave::INIRead(mINI::INIStructure *ini, std::string *value, std::string section, std::string key)
 {
     *value = "";
     if (ini->has(section))
@@ -658,7 +686,7 @@ void UndertaleSave::INIRead(mINI::INIStructure * ini, std::string * value, std::
     }
 }
 
-void UndertaleSave::INIRead(mINI::INIStructure * ini, bool * value, std::string section, std::string key)
+void UndertaleSave::INIRead(mINI::INIStructure *ini, bool *value, std::string section, std::string key)
 {
     *value = 0;
     if (ini->has(section))
@@ -672,7 +700,7 @@ void UndertaleSave::INIRead(mINI::INIStructure * ini, bool * value, std::string 
     }
 }
 
-void UndertaleSave::INIRead(mINI::INIStructure * ini, int * value, std::string section, std::string key)
+void UndertaleSave::INIRead(mINI::INIStructure *ini, int *value, std::string section, std::string key)
 {
     *value = 0;
     if (ini->has(section))
@@ -686,7 +714,7 @@ void UndertaleSave::INIRead(mINI::INIStructure * ini, int * value, std::string s
     }
 }
 
-void UndertaleSave::INIRead(mINI::INIStructure * ini, double * value, std::string section, std::string key)
+void UndertaleSave::INIRead(mINI::INIStructure *ini, double *value, std::string section, std::string key)
 {
     *value = 0;
     if (ini->has(section))
@@ -700,7 +728,7 @@ void UndertaleSave::INIRead(mINI::INIStructure * ini, double * value, std::strin
     }
 }
 
-void UndertaleSave::INIWrite(mINI::INIStructure * ini, std::string * value, std::string section, std::string key)
+void UndertaleSave::INIWrite(mINI::INIStructure *ini, std::string *value, std::string section, std::string key)
 {
     std::string str;
     str = "\"" + *value + "\"";
@@ -710,7 +738,7 @@ void UndertaleSave::INIWrite(mINI::INIStructure * ini, std::string * value, std:
     }
 }
 
-void UndertaleSave::INIWrite(mINI::INIStructure * ini, bool * value, std::string section, std::string key)
+void UndertaleSave::INIWrite(mINI::INIStructure *ini, bool *value, std::string section, std::string key)
 {
     std::string str;
     double val = static_cast<double>(*value);
@@ -721,7 +749,7 @@ void UndertaleSave::INIWrite(mINI::INIStructure * ini, bool * value, std::string
     }
 }
 
-void UndertaleSave::INIWrite(mINI::INIStructure * ini, int * value, std::string section, std::string key)
+void UndertaleSave::INIWrite(mINI::INIStructure *ini, int *value, std::string section, std::string key)
 {
     std::string str;
     double val = static_cast<double>(*value);
@@ -732,13 +760,13 @@ void UndertaleSave::INIWrite(mINI::INIStructure * ini, int * value, std::string 
     }
 }
 
-void UndertaleSave::INIWrite(mINI::INIStructure * ini, double * value, std::string section, std::string key)
+void UndertaleSave::INIWrite(mINI::INIStructure *ini, double *value, std::string section, std::string key)
 {
     std::string str;
     double val = *value;
     str = "\"" + std::to_string(val) + "\"";
     if ((ini->get(section).get(key) != str.c_str()) && (ini->get(section).get(key) != "" || *value > 0))
     {
-       (*ini)[section][key] = str;
+        (*ini)[section][key] = str;
     }
 }

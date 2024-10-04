@@ -13,7 +13,9 @@ class UndertaleGUI
             FILE_NONE,
             FILE_LOAD,
             FILE_SAVE,
-            FILE_SAVE_AS
+            FILE_SAVE_AS,
+            FILE_LOAD_SAV,
+            FILE_SAVE_AS_SAV
         };
 
         static void DrawMenuBar(bool enabled, UndertaleCommon::UndertaleSaveFile save[3], int mode);

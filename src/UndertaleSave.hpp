@@ -10,6 +10,9 @@ class UndertaleSave
     public:
         static void Load(SDL_Window * window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI * ini, UndertaleCommon::UndertaleConfigINI * config, bool &is_xbox);
         static void Save(SDL_Window * window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI * ini, UndertaleCommon::UndertaleConfigINI * config, bool is_xbox, bool save_as = false);
+        
+        static void ConsoleLoad(SDL_Window * window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI * ini, UndertaleCommon::UndertaleConfigINI * config, bool &is_xbox);
+        static void ConsoleSave(SDL_Window * window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI * ini, UndertaleCommon::UndertaleConfigINI * config, bool is_xbox);
     
     private:
         static int FileToStruct(std::string path, UndertaleCommon::UndertaleSaveFile * save, bool is_xbox);

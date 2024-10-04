@@ -119,9 +119,15 @@ void UndertaleApp::Loop()
             case UndertaleGUI::FILE_LOAD:
                 UndertaleSave::Load(window, save, &ini, &config, is_xbox);
                 break;
+            case UndertaleGUI::FILE_LOAD_SAV:
+                UndertaleSave::ConsoleLoad(window, save, &ini, &config, is_xbox);
+                break;
             case UndertaleGUI::FILE_SAVE:
             case UndertaleGUI::FILE_SAVE_AS:
                 UndertaleSave::Save(window, save, &ini, &config, is_xbox, UndertaleGUI::ShowFileDialog() == UndertaleGUI::FILE_SAVE_AS);
+                break;
+            case UndertaleGUI::FILE_SAVE_AS_SAV:
+                UndertaleSave::ConsoleSave(window, save, &ini, &config, is_xbox);
                 break;
         }
         UndertaleGUI::HideFileDialog();

@@ -15,18 +15,26 @@ void UndertaleGUI::DrawMenuBar(bool enabled, UndertaleCommon::UndertaleSaveFile 
         {
             if (ImGui::BeginMenu("File"))
             {
-                if (ImGui::MenuItem("Open"))
+                if (ImGui::MenuItem("Open (PC Save)"))
                 {
                     show_file_dialog = FILE_LOAD;
                 }
+                if (ImGui::MenuItem("Open (Console Save)"))
+                {
+                    show_file_dialog = FILE_LOAD_SAV;
+                }
                 ImGui::Separator();
-                if (ImGui::MenuItem("Save", "Ctrl+S", false, mode > SHOW_NONE))
+                if (ImGui::MenuItem("Save", "", false, mode > SHOW_NONE))
                 {
                     show_file_dialog = FILE_SAVE;
                 }
-                if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S", false, mode > SHOW_NONE))
+                if (ImGui::MenuItem("Save As... (PC Save)", "", false, mode > SHOW_NONE))
                 {
                     show_file_dialog = FILE_SAVE_AS;
+                }
+                if (ImGui::MenuItem("Save As... (Console Save)", "", false, mode > SHOW_NONE))
+                {
+                    show_file_dialog = FILE_SAVE_AS_SAV;
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Quit", "Alt+F4"))
@@ -80,7 +88,7 @@ void UndertaleGUI::DrawAboutPage(bool enabled)
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         ImGui::Begin("About", &show_about_page, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
         ImGui::Text(UndertaleCommon::title);
-        ImGui::Text("v0.0.1");
+        ImGui::Text("v1.0.0");
         ImGui::End();
     }
 }
@@ -636,6 +644,11 @@ void UndertaleGUI::DrawINIEditor(const char *title, UndertaleCommon::UndertaleIN
 
 void UndertaleGUI::DrawConfigINIEditor(const char * title, UndertaleCommon::UndertaleConfigINI * config)
 {
+    ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_FirstUseEver);
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGui::Begin(title, NULL, ImGuiWindowFlags_NoCollapse);
+
     ImGui::SeparatorText("General");
     const char * languages[2] = {"English", "Japanese"};
     const char * lang[2] = {"en", "ja"};
@@ -650,7 +663,7 @@ void UndertaleGUI::DrawConfigINIEditor(const char * title, UndertaleCommon::Unde
     selected_language = DrawCombo("LANGUAGE", languages, IM_ARRAYSIZE(languages), selected_language);
     config->general.lang = lang[selected_language];
 
-    const char * borders[15] = {"NONE", "Simple", "Sepia", "Dynamic", "Ruins", "Snowdin", "Waterfall", "Hotland", "Castle", "True lab", "Beauty", "Real/Not Real", "Super Dog, Hoi", "Casino", "UNKNOWN"};
+    const char * borders[15] = {"NONE", "Simple", "Sepia", "Dynamic", "Ruins", "Snowdin", "Waterfall", "Hotland", "Castle", "True lab", "Beauty", "Real/Not Real", "Super Dog, Hoi", "Casino", "?????"};
     int selected_border = (config->general.sb > 13 ? 14 : config->general.sb);
     selected_border = DrawCombo("BORDER", borders, IM_ARRAYSIZE(borders) - 1, selected_border);
     config->general.sb = selected_border;
@@ -665,6 +678,8 @@ void UndertaleGUI::DrawConfigINIEditor(const char * title, UndertaleCommon::Unde
     int selected_joy = config->joypad1.jd;
     selected_joy = DrawCombo("DIR CHOICE", joy_dir, IM_ARRAYSIZE(joy_dir), selected_joy);
     config->joypad1.jd = selected_joy;
+    
+    ImGui::End();
 }
 
 // kill me
