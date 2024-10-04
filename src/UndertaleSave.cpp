@@ -57,8 +57,6 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
                 }
                 while (getline(infile, line))
                     num_lines++;
-                
-                std::cout << num_lines << std::endl;
 
                 is_xbox = (num_lines == 551);
                 infile.close();
