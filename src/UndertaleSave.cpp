@@ -13,8 +13,9 @@ std::string UndertaleSave::dir;
 bool UndertaleSave::is_json = false;
 nlohmann::json UndertaleSave::jsondata;
 mINI::INIStructure UndertaleSave::inidata;
+mINI::INIStructure UndertaleSave::configinidata;
 
-void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI * ini, bool &is_xbox)
+void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI * ini, UndertaleCommon::UndertaleConfigINI * config, bool &is_xbox)
 {
     NFD::Guard nfdGuard;
     NFD::UniquePath outPath;
@@ -23,6 +24,7 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
     if (result == NFD_OKAY)
     {
         inidata.clear();
+        configinidata.clear();
         fs::path filepath = outPath.get();
         std::string fileext = filepath.extension().string();
         is_json = (fileext == ".sav");
@@ -70,6 +72,7 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
                         return;
                     }
                 }
+
                 else if (file == "file9")
                 {
                     if (FileToStruct(path.string(), &save[1], is_xbox) != 0)
@@ -78,6 +81,7 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
                         return;
                     }
                 }
+
                 else if (file == "file8")
                 {
                     if (FileToStruct(path.string(), &save[2], is_xbox) != 0)
@@ -87,12 +91,21 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
                     }
                 }
             }
+
             fs::path ini_path = fs::path(dir) / "undertale.ini";
             if (fs::exists(ini_path))
             {
                 mINI::INIFile file(ini_path.string());
                 file.read(inidata);
                 INIFileToStruct(ini);
+            }
+
+            fs::path config_path = fs::path(dir) / "config.ini";
+            if (fs::exists(config_path))
+            {
+                mINI::INIFile configfile(config_path.string());
+                configfile.read(configinidata);
+                ConfigINIFileToStruct(config);
             }
         }
         else
@@ -135,12 +148,21 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
                     std::string file9 = jsondata["file8"].get<std::string>();
                     JSONToStruct(file9, &save[2], is_xbox);
                 }
+
                 if (jsondata.contains("undertale.ini"))
                 {
                     std::stringstream inibuffer = ReplaceStringLiterals(jsondata["undertale.ini"]);
                     mINI::INIFile file(&inibuffer);
-                    file.read(inidata);
+                    file.readbuffer(inidata);
                     INIFileToStruct(ini);
+                }
+
+                if (jsondata.contains("config.ini"))
+                {
+                    std::stringstream configinibuffer = ReplaceStringLiterals(jsondata["config.ini"]);
+                    mINI::INIFile configfile(&configinibuffer);
+                    configfile.readbuffer(configinidata);
+                    ConfigINIFileToStruct(config);
                 }
             }
             catch (const std::exception& e)
@@ -152,7 +174,7 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
     }
 }
 
-void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI * ini, bool is_xbox, bool save_as)
+void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI * ini, UndertaleCommon::UndertaleConfigINI * config, bool is_xbox, bool save_as)
 {
     std::string files[3] = {"file0", "file9", "file8"};
     fs::path filepath;
@@ -188,12 +210,21 @@ void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
             }
             i++;
         }
+
         fs::path ini_path = fs::path(dir) / "undertale.ini";
         if (fs::exists(ini_path))
         {
             mINI::INIFile file(ini_path.string());
             StructToINIFile(ini);
             file.write(inidata);
+        }
+
+        fs::path config_path = fs::path(dir) / "config.ini";
+        if (fs::exists(config_path))
+        {
+            mINI::INIFile configfile(config_path.string());
+            StructToConfigINIFile(config);
+            configfile.write(configinidata);
         }
     }
     else
@@ -205,6 +236,7 @@ void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
             SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not save file!", window);
             return;
         }
+
         int i = 0;
         for (std::string file : files)
         {
@@ -215,6 +247,7 @@ void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
             }
             i++;
         }
+
         if (jsondata.contains("undertale.ini"))
         {
             StructToINIFile(ini);
@@ -223,6 +256,16 @@ void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
             file.writebuffer(inidata);
             jsondata["undertale.ini"] = ini_buffer.str();
         }
+
+        if (jsondata.contains("config.ini"))
+        {
+            StructToINIFile(ini);
+            std::stringstream configini_buffer;
+            mINI::INIFile file(&configini_buffer);
+            file.writebuffer(configinidata);
+            jsondata["config.ini"] = configini_buffer.str();
+        }
+
         outfile << jsondata;
         outfile.close();
     }
@@ -413,265 +456,289 @@ std::stringstream UndertaleSave::ReplaceStringLiterals(std::string str)
 
 void UndertaleSave::INIFileToStruct(UndertaleCommon::UndertaleINI * ini)
 {
-    INIRead(&ini->general.Name, "General", "Name");
-    INIRead(&ini->general.Time, "General", "Time");
-    INIRead(&ini->general.Room, "General", "Room");
-    INIRead(&ini->general.Gameover, "General", "Gameover");
-    INIRead(&ini->general.Kills, "General", "Kills");
-    INIRead(&ini->general.Love, "General", "Love");
-    INIRead(&ini->general.Tale, "General", "Tale");
-    INIRead(&ini->general.Won, "General", "Won");
-    INIRead(&ini->general.BW, "General", "BW");
-    INIRead(&ini->general.BC, "General", "BC");
-    INIRead(&ini->general.CP, "General", "CP");
-    INIRead(&ini->general.BP, "General", "BP");
-    INIRead(&ini->general.CH, "General", "CH");
-    INIRead(&ini->general.BH, "General", "BH");
-    INIRead(&ini->general.DB, "General", "DB");
+    INIRead(&inidata, &ini->general.Name, "General", "Name");
+    INIRead(&inidata, &ini->general.Time, "General", "Time");
+    INIRead(&inidata, &ini->general.Room, "General", "Room");
+    INIRead(&inidata, &ini->general.Gameover, "General", "Gameover");
+    INIRead(&inidata, &ini->general.Kills, "General", "Kills");
+    INIRead(&inidata, &ini->general.Love, "General", "Love");
+    INIRead(&inidata, &ini->general.Tale, "General", "Tale");
+    INIRead(&inidata, &ini->general.Won, "General", "Won");
+    INIRead(&inidata, &ini->general.BW, "General", "BW");
+    INIRead(&inidata, &ini->general.BC, "General", "BC");
+    INIRead(&inidata, &ini->general.CP, "General", "CP");
+    INIRead(&inidata, &ini->general.BP, "General", "BP");
+    INIRead(&inidata, &ini->general.CH, "General", "CH");
+    INIRead(&inidata, &ini->general.BH, "General", "BH");
+    INIRead(&inidata, &ini->general.DB, "General", "DB");
 
-    INIRead(&ini->reset.reset, "Reset", "reset");
-    INIRead(&ini->reset.s_key, "Reset", "s_key");
+    INIRead(&inidata, &ini->reset.reset, "Reset", "reset");
+    INIRead(&inidata, &ini->reset.s_key, "Reset", "s_key");
 
-    INIRead(&ini->flowey.Met1, "Flowey", "Met1");
-    INIRead(&ini->flowey.K, "Flowey", "K");
-    INIRead(&ini->flowey.NK, "Flowey", "NK");
-    INIRead(&ini->flowey.IK, "Flowey", "IK");
-    INIRead(&ini->flowey.SK, "Flowey", "SK");
-    INIRead(&ini->flowey.FloweyExplain1, "Flowey", "FloweyExplain1");
-    INIRead(&ini->flowey.EX, "Flowey", "EX");
-    INIRead(&ini->flowey.CHANGE, "Flowey", "CHANGE");
-    INIRead(&ini->flowey.AK, "Flowey", "AK");
-    INIRead(&ini->flowey.AF, "Flowey", "AF");
-    INIRead(&ini->flowey.Alter, "Flowey", "Alter");
-    INIRead(&ini->flowey.alter2, "Flowey", "alter2");
-    INIRead(&ini->flowey.truename, "Flowey", "truename");
-    INIRead(&ini->flowey.SPECIALK, "Flowey", "SPECIALK");
+    INIRead(&inidata, &ini->flowey.Met1, "Flowey", "Met1");
+    INIRead(&inidata, &ini->flowey.K, "Flowey", "K");
+    INIRead(&inidata, &ini->flowey.NK, "Flowey", "NK");
+    INIRead(&inidata, &ini->flowey.IK, "Flowey", "IK");
+    INIRead(&inidata, &ini->flowey.SK, "Flowey", "SK");
+    INIRead(&inidata, &ini->flowey.FloweyExplain1, "Flowey", "FloweyExplain1");
+    INIRead(&inidata, &ini->flowey.EX, "Flowey", "EX");
+    INIRead(&inidata, &ini->flowey.CHANGE, "Flowey", "CHANGE");
+    INIRead(&inidata, &ini->flowey.AK, "Flowey", "AK");
+    INIRead(&inidata, &ini->flowey.AF, "Flowey", "AF");
+    INIRead(&inidata, &ini->flowey.Alter, "Flowey", "Alter");
+    INIRead(&inidata, &ini->flowey.alter2, "Flowey", "alter2");
+    INIRead(&inidata, &ini->flowey.truename, "Flowey", "truename");
+    INIRead(&inidata, &ini->flowey.SPECIALK, "Flowey", "SPECIALK");
 
-    INIRead(&ini->toriel.Bscotch, "Toriel", "Bscotch");
-    INIRead(&ini->toriel.TS, "Toriel", "TS");
-    INIRead(&ini->toriel.TK, "Toriel", "TK");
+    INIRead(&inidata, &ini->toriel.Bscotch, "Toriel", "Bscotch");
+    INIRead(&inidata, &ini->toriel.TS, "Toriel", "TS");
+    INIRead(&inidata, &ini->toriel.TK, "Toriel", "TK");
 
-    INIRead(&ini->sans.M1, "Sans", "M1");
-    INIRead(&ini->sans.EndMet, "Sans", "EndMet");
-    INIRead(&ini->sans.MeetLv1, "Sans", "MeetLv1");
-    INIRead(&ini->sans.MeetLv2, "Sans", "MeetLv2");
-    INIRead(&ini->sans.MeetLv, "Sans", "MeetLv");
-    INIRead(&ini->sans.Pass, "Sans", "Pass");
-    INIRead(&ini->sans.Intro, "Sans", "Intro");
-    INIRead(&ini->sans.F, "Sans", "F");
-    INIRead(&ini->sans.MP, "Sans", "MP");
-    INIRead(&ini->sans.SK, "Sans", "SK");
-    INIRead(&ini->sans.SS, "Sans", "SS");
-    INIRead(&ini->sans.SS2, "Sans", "SS2");
+    INIRead(&inidata, &ini->sans.M1, "Sans", "M1");
+    INIRead(&inidata, &ini->sans.EndMet, "Sans", "EndMet");
+    INIRead(&inidata, &ini->sans.MeetLv1, "Sans", "MeetLv1");
+    INIRead(&inidata, &ini->sans.MeetLv2, "Sans", "MeetLv2");
+    INIRead(&inidata, &ini->sans.MeetLv, "Sans", "MeetLv");
+    INIRead(&inidata, &ini->sans.Pass, "Sans", "Pass");
+    INIRead(&inidata, &ini->sans.Intro, "Sans", "Intro");
+    INIRead(&inidata, &ini->sans.F, "Sans", "F");
+    INIRead(&inidata, &ini->sans.MP, "Sans", "MP");
+    INIRead(&inidata, &ini->sans.SK, "Sans", "SK");
+    INIRead(&inidata, &ini->sans.SS, "Sans", "SS");
+    INIRead(&inidata, &ini->sans.SS2, "Sans", "SS2");
 
-    INIRead(&ini->papyrus.M1, "Papyrus", "M1");
-    INIRead(&ini->papyrus.PS, "Papyrus", "PS");
-    INIRead(&ini->papyrus.PD, "Papyrus", "PD");
-    INIRead(&ini->papyrus.PK, "Papyrus", "PK");
+    INIRead(&inidata, &ini->papyrus.M1, "Papyrus", "M1");
+    INIRead(&inidata, &ini->papyrus.PS, "Papyrus", "PS");
+    INIRead(&inidata, &ini->papyrus.PD, "Papyrus", "PD");
+    INIRead(&inidata, &ini->papyrus.PK, "Papyrus", "PK");
 
-    INIRead(&ini->fffff.F, "FFFFF", "F");
-    INIRead(&ini->fffff.D, "FFFFF", "D");
-    INIRead(&ini->fffff.P, "FFFFF", "P");
-    INIRead(&ini->fffff.E, "FFFFF", "E");
+    INIRead(&inidata, &ini->fffff.F, "FFFFF", "F");
+    INIRead(&inidata, &ini->fffff.D, "FFFFF", "D");
+    INIRead(&inidata, &ini->fffff.P, "FFFFF", "P");
+    INIRead(&inidata, &ini->fffff.E, "FFFFF", "E");
 
-    INIRead(&ini->undyne.UD, "Undyne", "UD");
+    INIRead(&inidata, &ini->undyne.UD, "Undyne", "UD");
 
-    INIRead(&ini->mettaton.BossMet, "Mettaton", "BossMet");
+    INIRead(&inidata, &ini->mettaton.BossMet, "Mettaton", "BossMet");
 
-    INIRead(&ini->mett.O, "Mett", "O");
+    INIRead(&inidata, &ini->mett.O, "Mett", "O");
 
-    INIRead(&ini->mtt.EssayNo, "MTT", "EssayNo");
+    INIRead(&inidata, &ini->mtt.EssayNo, "MTT", "EssayNo");
 
-    INIRead(&ini->asgore.KillYou, "Asgore", "KillYou");
+    INIRead(&inidata, &ini->asgore.KillYou, "Asgore", "KillYou");
 
-    INIRead(&ini->alphys.AD, "Alphys", "AD");
-    INIRead(&ini->alphys.M, "Alphys", "M");
-    INIRead(&ini->alphys.R, "Alphys", "R");
+    INIRead(&inidata, &ini->alphys.AD, "Alphys", "AD");
+    INIRead(&inidata, &ini->alphys.M, "Alphys", "M");
+    INIRead(&inidata, &ini->alphys.R, "Alphys", "R");
 
-    INIRead(&ini->f7.F7, "F7", "F7");
+    INIRead(&inidata, &ini->f7.F7, "F7", "F7");
 
-    INIRead(&ini->endf.EndF, "EndF", "EndF");
+    INIRead(&inidata, &ini->endf.EndF, "EndF", "EndF");
 
-    INIRead(&ini->dogshrine.Donated, "Dogshrine", "Donated");
+    INIRead(&inidata, &ini->dogshrine.Donated, "Dogshrine", "Donated");
 }
 
 void UndertaleSave::StructToINIFile(UndertaleCommon::UndertaleINI * ini)
 {
-    INIWrite(&ini->general.Name, "General", "Name");
-    INIWrite(&ini->general.Time, "General", "Time");
-    INIWrite(&ini->general.Room, "General", "Room");
-    INIWrite(&ini->general.Gameover, "General", "Gameover");
-    INIWrite(&ini->general.Kills, "General", "Kills");
-    INIWrite(&ini->general.Love, "General", "Love");
-    INIWrite(&ini->general.Tale, "General", "Tale");
-    INIWrite(&ini->general.Won, "General", "Won");
-    INIWrite(&ini->general.BW, "General", "BW");
-    INIWrite(&ini->general.BC, "General", "BC");
-    INIWrite(&ini->general.CP, "General", "CP");
-    INIWrite(&ini->general.BP, "General", "BP");
-    INIWrite(&ini->general.CH, "General", "CH");
-    INIWrite(&ini->general.BH, "General", "BH");
-    INIWrite(&ini->general.DB, "General", "DB");
+    INIWrite(&inidata, &ini->general.Name, "General", "Name");
+    INIWrite(&inidata, &ini->general.Time, "General", "Time");
+    INIWrite(&inidata, &ini->general.Room, "General", "Room");
+    INIWrite(&inidata, &ini->general.Gameover, "General", "Gameover");
+    INIWrite(&inidata, &ini->general.Kills, "General", "Kills");
+    INIWrite(&inidata, &ini->general.Love, "General", "Love");
+    INIWrite(&inidata, &ini->general.Tale, "General", "Tale");
+    INIWrite(&inidata, &ini->general.Won, "General", "Won");
+    INIWrite(&inidata, &ini->general.BW, "General", "BW");
+    INIWrite(&inidata, &ini->general.BC, "General", "BC");
+    INIWrite(&inidata, &ini->general.CP, "General", "CP");
+    INIWrite(&inidata, &ini->general.BP, "General", "BP");
+    INIWrite(&inidata, &ini->general.CH, "General", "CH");
+    INIWrite(&inidata, &ini->general.BH, "General", "BH");
+    INIWrite(&inidata, &ini->general.DB, "General", "DB");
 
-    INIWrite(&ini->reset.reset, "Reset", "reset");
-    INIWrite(&ini->reset.s_key, "Reset", "s_key");
+    INIWrite(&inidata, &ini->reset.reset, "Reset", "reset");
+    INIWrite(&inidata, &ini->reset.s_key, "Reset", "s_key");
 
-    INIWrite(&ini->flowey.Met1, "Flowey", "Met1");
-    INIWrite(&ini->flowey.K, "Flowey", "K");
-    INIWrite(&ini->flowey.NK, "Flowey", "NK");
-    INIWrite(&ini->flowey.IK, "Flowey", "IK");
-    INIWrite(&ini->flowey.SK, "Flowey", "SK");
-    INIWrite(&ini->flowey.FloweyExplain1, "Flowey", "FloweyExplain1");
-    INIWrite(&ini->flowey.EX, "Flowey", "EX");
-    INIWrite(&ini->flowey.CHANGE, "Flowey", "CHANGE");
-    INIWrite(&ini->flowey.AK, "Flowey", "AK");
-    INIWrite(&ini->flowey.AF, "Flowey", "AF");
-    INIWrite(&ini->flowey.Alter, "Flowey", "Alter");
-    INIWrite(&ini->flowey.alter2, "Flowey", "alter2");
-    INIWrite(&ini->flowey.truename, "Flowey", "truename");
-    INIWrite(&ini->flowey.SPECIALK, "Flowey", "SPECIALK");
+    INIWrite(&inidata, &ini->flowey.Met1, "Flowey", "Met1");
+    INIWrite(&inidata, &ini->flowey.K, "Flowey", "K");
+    INIWrite(&inidata, &ini->flowey.NK, "Flowey", "NK");
+    INIWrite(&inidata, &ini->flowey.IK, "Flowey", "IK");
+    INIWrite(&inidata, &ini->flowey.SK, "Flowey", "SK");
+    INIWrite(&inidata, &ini->flowey.FloweyExplain1, "Flowey", "FloweyExplain1");
+    INIWrite(&inidata, &ini->flowey.EX, "Flowey", "EX");
+    INIWrite(&inidata, &ini->flowey.CHANGE, "Flowey", "CHANGE");
+    INIWrite(&inidata, &ini->flowey.AK, "Flowey", "AK");
+    INIWrite(&inidata, &ini->flowey.AF, "Flowey", "AF");
+    INIWrite(&inidata, &ini->flowey.Alter, "Flowey", "Alter");
+    INIWrite(&inidata, &ini->flowey.alter2, "Flowey", "alter2");
+    INIWrite(&inidata, &ini->flowey.truename, "Flowey", "truename");
+    INIWrite(&inidata, &ini->flowey.SPECIALK, "Flowey", "SPECIALK");
 
-    INIWrite(&ini->toriel.Bscotch, "Toriel", "Bscotch");
-    INIWrite(&ini->toriel.TS, "Toriel", "TS");
-    INIWrite(&ini->toriel.TK, "Toriel", "TK");
+    INIWrite(&inidata, &ini->toriel.Bscotch, "Toriel", "Bscotch");
+    INIWrite(&inidata, &ini->toriel.TS, "Toriel", "TS");
+    INIWrite(&inidata, &ini->toriel.TK, "Toriel", "TK");
 
-    INIWrite(&ini->sans.M1, "Sans", "M1");
-    INIWrite(&ini->sans.EndMet, "Sans", "EndMet");
-    INIWrite(&ini->sans.MeetLv1, "Sans", "MeetLv1");
-    INIWrite(&ini->sans.MeetLv2, "Sans", "MeetLv2");
-    INIWrite(&ini->sans.MeetLv, "Sans", "MeetLv");
-    INIWrite(&ini->sans.Pass, "Sans", "Pass");
-    INIWrite(&ini->sans.Intro, "Sans", "Intro");
-    INIWrite(&ini->sans.F, "Sans", "F");
-    INIWrite(&ini->sans.MP, "Sans", "MP");
-    INIWrite(&ini->sans.SK, "Sans", "SK");
-    INIWrite(&ini->sans.SS, "Sans", "SS");
-    INIWrite(&ini->sans.SS2, "Sans", "SS2");
+    INIWrite(&inidata, &ini->sans.M1, "Sans", "M1");
+    INIWrite(&inidata, &ini->sans.EndMet, "Sans", "EndMet");
+    INIWrite(&inidata, &ini->sans.MeetLv1, "Sans", "MeetLv1");
+    INIWrite(&inidata, &ini->sans.MeetLv2, "Sans", "MeetLv2");
+    INIWrite(&inidata, &ini->sans.MeetLv, "Sans", "MeetLv");
+    INIWrite(&inidata, &ini->sans.Pass, "Sans", "Pass");
+    INIWrite(&inidata, &ini->sans.Intro, "Sans", "Intro");
+    INIWrite(&inidata, &ini->sans.F, "Sans", "F");
+    INIWrite(&inidata, &ini->sans.MP, "Sans", "MP");
+    INIWrite(&inidata, &ini->sans.SK, "Sans", "SK");
+    INIWrite(&inidata, &ini->sans.SS, "Sans", "SS");
+    INIWrite(&inidata, &ini->sans.SS2, "Sans", "SS2");
 
-    INIWrite(&ini->papyrus.M1, "Papyrus", "M1");
-    INIWrite(&ini->papyrus.PS, "Papyrus", "PS");
-    INIWrite(&ini->papyrus.PD, "Papyrus", "PD");
-    INIWrite(&ini->papyrus.PK, "Papyrus", "PK");
+    INIWrite(&inidata, &ini->papyrus.M1, "Papyrus", "M1");
+    INIWrite(&inidata, &ini->papyrus.PS, "Papyrus", "PS");
+    INIWrite(&inidata, &ini->papyrus.PD, "Papyrus", "PD");
+    INIWrite(&inidata, &ini->papyrus.PK, "Papyrus", "PK");
 
-    INIWrite(&ini->fffff.F, "FFFFF", "F");
-    INIWrite(&ini->fffff.D, "FFFFF", "D");
-    INIWrite(&ini->fffff.P, "FFFFF", "P");
-    INIWrite(&ini->fffff.E, "FFFFF", "E");
+    INIWrite(&inidata, &ini->fffff.F, "FFFFF", "F");
+    INIWrite(&inidata, &ini->fffff.D, "FFFFF", "D");
+    INIWrite(&inidata, &ini->fffff.P, "FFFFF", "P");
+    INIWrite(&inidata, &ini->fffff.E, "FFFFF", "E");
 
-    INIWrite(&ini->undyne.UD, "Undyne", "UD");
+    INIWrite(&inidata, &ini->undyne.UD, "Undyne", "UD");
 
-    INIWrite(&ini->mettaton.BossMet, "Mettaton", "BossMet");
+    INIWrite(&inidata, &ini->mettaton.BossMet, "Mettaton", "BossMet");
 
-    INIWrite(&ini->mett.O, "Mett", "O");
+    INIWrite(&inidata, &ini->mett.O, "Mett", "O");
 
-    INIWrite(&ini->mtt.EssayNo, "MTT", "EssayNo");
+    INIWrite(&inidata, &ini->mtt.EssayNo, "MTT", "EssayNo");
 
-    INIWrite(&ini->asgore.KillYou, "Asgore", "KillYou");
+    INIWrite(&inidata, &ini->asgore.KillYou, "Asgore", "KillYou");
 
-    INIWrite(&ini->alphys.AD, "Alphys", "AD");
-    INIWrite(&ini->alphys.M, "Alphys", "M");
-    INIWrite(&ini->alphys.R, "Alphys", "R");
+    INIWrite(&inidata, &ini->alphys.AD, "Alphys", "AD");
+    INIWrite(&inidata, &ini->alphys.M, "Alphys", "M");
+    INIWrite(&inidata, &ini->alphys.R, "Alphys", "R");
 
-    INIWrite(&ini->f7.F7, "F7", "F7");
+    INIWrite(&inidata, &ini->f7.F7, "F7", "F7");
 
-    INIWrite(&ini->endf.EndF, "EndF", "EndF");
+    INIWrite(&inidata, &ini->endf.EndF, "EndF", "EndF");
 
-    INIWrite(&ini->dogshrine.Donated, "Dogshrine", "Donated");
+    INIWrite(&inidata, &ini->dogshrine.Donated, "Dogshrine", "Donated");
 }
 
-void UndertaleSave::INIRead(std::string * value, std::string section, std::string key)
+void UndertaleSave::ConfigINIFileToStruct(UndertaleCommon::UndertaleConfigINI * config)
+{
+    INIRead(&configinidata, &config->general.lang, "General", "lang");
+    INIRead(&configinidata, &config->general.sb, "General", "sb");
+
+    INIRead(&configinidata, &config->joypad1.b0, "joypad1", "b0");
+    INIRead(&configinidata, &config->joypad1.b1, "joypad1", "b1");
+    INIRead(&configinidata, &config->joypad1.b2, "joypad1", "b2");
+    INIRead(&configinidata, &config->joypad1.as, "joypad1", "as");
+    INIRead(&configinidata, &config->joypad1.jd, "joypad1", "jd");
+}
+
+void UndertaleSave::StructToConfigINIFile(UndertaleCommon::UndertaleConfigINI * config)
+{
+    INIWrite(&configinidata, &config->general.lang, "General", "lang");
+    INIWrite(&configinidata, &config->general.sb, "General", "sb");
+
+    INIWrite(&configinidata, &config->joypad1.b0, "joypad1", "b0");
+    INIWrite(&configinidata, &config->joypad1.b1, "joypad1", "b1");
+    INIWrite(&configinidata, &config->joypad1.b2, "joypad1", "b2");
+    INIWrite(&configinidata, &config->joypad1.as, "joypad1", "as");
+    INIWrite(&configinidata, &config->joypad1.jd, "joypad1", "jd");
+}
+
+void UndertaleSave::INIRead(mINI::INIStructure * ini, std::string * value, std::string section, std::string key)
 {
     *value = "";
-    if (inidata.has(section))
+    if (ini->has(section))
     {
-        if (inidata.get(section).has(key))
+        if (ini->get(section).has(key))
         {
-            *value = inidata[section][key].substr(1, inidata[section][key].size() - 2);
+            *value = (*ini)[section][key].substr(1, (*ini)[section][key].size() - 2);
         }
     }
 }
 
-void UndertaleSave::INIRead(bool * value, std::string section, std::string key)
+void UndertaleSave::INIRead(mINI::INIStructure * ini, bool * value, std::string section, std::string key)
 {
     *value = 0;
-    if (inidata.has(section))
+    if (ini->has(section))
     {
-        if (inidata.get(section).has(key))
+        if (ini->get(section).has(key))
         {
-            std::string str = inidata[section][key];
+            std::string str = (*ini)[section][key];
             str = str.substr(1, str.size() - 2);
             *value = std::stoi(str);
         }
     }
 }
 
-void UndertaleSave::INIRead(int * value, std::string section, std::string key)
+void UndertaleSave::INIRead(mINI::INIStructure * ini, int * value, std::string section, std::string key)
 {
     *value = 0;
-    if (inidata.has(section))
+    if (ini->has(section))
     {
-        if (inidata.get(section).has(key))
+        if (ini->get(section).has(key))
         {
-            std::string str = inidata[section][key];
+            std::string str = (*ini)[section][key];
             str = str.substr(1, str.size() - 2);
             *value = std::stoi(str);
         }
     }
 }
 
-void UndertaleSave::INIRead(double * value, std::string section, std::string key)
+void UndertaleSave::INIRead(mINI::INIStructure * ini, double * value, std::string section, std::string key)
 {
     *value = 0;
-    if (inidata.has(section))
+    if (ini->has(section))
     {
-        if (inidata.get(section).has(key))
+        if (ini->get(section).has(key))
         {
-            std::string str = inidata[section][key];
+            std::string str = (*ini)[section][key];
             str = str.substr(1, str.size() - 2);
             *value = std::stod(str);
         }
     }
 }
 
-void UndertaleSave::INIWrite(std::string * value, std::string section, std::string key)
+void UndertaleSave::INIWrite(mINI::INIStructure * ini, std::string * value, std::string section, std::string key)
 {
     std::string str;
     str = "\"" + *value + "\"";
-    if ((inidata.get(section).get(key) != str.c_str()) && (inidata.get(section).get(key) != "" || *value != ""))
+    if ((ini->get(section).get(key) != str.c_str()) && (ini->get(section).get(key) != "" || *value != ""))
     {
-        inidata[section][key] = str;
+        (*ini)[section][key] = str;
     }
 }
 
-void UndertaleSave::INIWrite(bool * value, std::string section, std::string key)
+void UndertaleSave::INIWrite(mINI::INIStructure * ini, bool * value, std::string section, std::string key)
 {
     std::string str;
     double val = static_cast<double>(*value);
     str = "\"" + std::to_string(val) + "\"";
-    if ((inidata.get(section).get(key) != str.c_str()) && (inidata.get(section).get(key) != "" || *value))
+    if ((ini->get(section).get(key) != str.c_str()) && (ini->get(section).get(key) != "" || *value))
     {
-        inidata[section][key] = str;
+        (*ini)[section][key] = str;
     }
 }
 
-void UndertaleSave::INIWrite(int * value, std::string section, std::string key)
+void UndertaleSave::INIWrite(mINI::INIStructure * ini, int * value, std::string section, std::string key)
 {
     std::string str;
     double val = static_cast<double>(*value);
     str = "\"" + std::to_string(val) + "\"";
-    if ((inidata.get(section).get(key) != str.c_str()) && (inidata.get(section).get(key) != "" || *value > 0))
+    if ((ini->get(section).get(key) != str.c_str()) && (ini->get(section).get(key) != "" || *value > 0))
     {
-        inidata[section][key] = str;
+        (*ini)[section][key] = str;
     }
 }
 
-void UndertaleSave::INIWrite(double * value, std::string section, std::string key)
+void UndertaleSave::INIWrite(mINI::INIStructure * ini, double * value, std::string section, std::string key)
 {
     std::string str;
     double val = *value;
     str = "\"" + std::to_string(val) + "\"";
-    if ((inidata.get(section).get(key) != str.c_str()) && (inidata.get(section).get(key) != "" || *value > 0))
+    if ((ini->get(section).get(key) != str.c_str()) && (ini->get(section).get(key) != "" || *value > 0))
     {
-       inidata[section][key] = str;
+       (*ini)[section][key] = str;
     }
 }

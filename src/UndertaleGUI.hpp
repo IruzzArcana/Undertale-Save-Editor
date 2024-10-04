@@ -18,7 +18,7 @@ class UndertaleGUI
 
         static void DrawMenuBar(bool enabled, UndertaleCommon::UndertaleSaveFile save[3], int mode);
         static void DrawAboutPage(bool enabled);
-        static void DrawSaveEditor(bool enalbed, UndertaleCommon::UndertaleSaveFile * save, UndertaleCommon::UndertaleINI * ini, bool is_xbox);
+        static void DrawSaveEditor(bool enalbed, UndertaleCommon::UndertaleSaveFile * save, UndertaleCommon::UndertaleINI * ini, UndertaleCommon::UndertaleConfigINI *config, bool is_xbox);
         static bool Quit() { return quit; };
         static bool ShowAboutPage() { return show_about_page; };
         static int GetFile() { return (current_file > 2 ? 0 : current_file); };
@@ -28,6 +28,7 @@ class UndertaleGUI
     private:
         static void DrawFileEditor(const char * title, UndertaleCommon::UndertaleSaveFile * save, bool is_xbox);
         static void DrawINIEditor(const char * title, UndertaleCommon::UndertaleINI * ini, bool is_xbox);
+        static void DrawConfigINIEditor(const char * title, UndertaleCommon::UndertaleConfigINI * config);
         static int DrawCombo(const char * label, const char * state[], int size, int selected_state, int index_override[] = {}, int index_size = 0);
         static void HelpMarker(const char* desc);
         static bool quit;

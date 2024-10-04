@@ -8,8 +8,8 @@
 class UndertaleSave
 {
     public:
-        static void Load(SDL_Window * window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI * ini, bool &is_xbox);
-        static void Save(SDL_Window * window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI * ini, bool is_xbox, bool save_as = false);
+        static void Load(SDL_Window * window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI * ini, UndertaleCommon::UndertaleConfigINI * config, bool &is_xbox);
+        static void Save(SDL_Window * window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI * ini, UndertaleCommon::UndertaleConfigINI * config, bool is_xbox, bool save_as = false);
     
     private:
         static int FileToStruct(std::string path, UndertaleCommon::UndertaleSaveFile * save, bool is_xbox);
@@ -17,16 +17,18 @@ class UndertaleSave
         static int JSONToStruct(std::string data, UndertaleCommon::UndertaleSaveFile * save, bool is_xbox);
         static void INIFileToStruct(UndertaleCommon::UndertaleINI * ini);
         static void StructToINIFile(UndertaleCommon::UndertaleINI * ini);
+        static void ConfigINIFileToStruct(UndertaleCommon::UndertaleConfigINI * config);
+        static void StructToConfigINIFile(UndertaleCommon::UndertaleConfigINI * config);
 
-        static void INIRead(std::string * value, std::string section, std::string key);
-        static void INIRead(bool * value, std::string section, std::string key);
-        static void INIRead(int * value, std::string section, std::string key);
-        static void INIRead(double * value, std::string section, std::string key);
+        static void INIRead(mINI::INIStructure * ini, std::string * value, std::string section, std::string key);
+        static void INIRead(mINI::INIStructure * ini, bool * value, std::string section, std::string key);
+        static void INIRead(mINI::INIStructure * ini, int * value, std::string section, std::string key);
+        static void INIRead(mINI::INIStructure * ini, double * value, std::string section, std::string key);
 
-        static void INIWrite(std::string * value, std::string section, std::string key);
-        static void INIWrite(bool * value, std::string section, std::string key);
-        static void INIWrite(int * value, std::string section, std::string key);
-        static void INIWrite(double * value, std::string section, std::string key);
+        static void INIWrite(mINI::INIStructure * ini, std::string * value, std::string section, std::string key);
+        static void INIWrite(mINI::INIStructure * ini, bool * value, std::string section, std::string key);
+        static void INIWrite(mINI::INIStructure * ini, int * value, std::string section, std::string key);
+        static void INIWrite(mINI::INIStructure * ini, double * value, std::string section, std::string key);
 
         static std::stringstream StructToJSON(UndertaleCommon::UndertaleSaveFile * save, bool is_xbox);
         static std::stringstream ReplaceStringLiterals(std::string str);
@@ -35,4 +37,5 @@ class UndertaleSave
         static bool is_json;
         static nlohmann::json jsondata;
         static mINI::INIStructure inidata;
+        static mINI::INIStructure configinidata;
 };

@@ -85,7 +85,7 @@ void UndertaleGUI::DrawAboutPage(bool enabled)
     }
 }
 
-void UndertaleGUI::DrawSaveEditor(bool enabled, UndertaleCommon::UndertaleSaveFile *save, UndertaleCommon::UndertaleINI *ini, bool is_xbox)
+void UndertaleGUI::DrawSaveEditor(bool enabled, UndertaleCommon::UndertaleSaveFile *save, UndertaleCommon::UndertaleINI *ini, UndertaleCommon::UndertaleConfigINI *config, bool is_xbox)
 {
     if (enabled)
     {
@@ -110,8 +110,10 @@ void UndertaleGUI::DrawSaveEditor(bool enabled, UndertaleCommon::UndertaleSaveFi
         }
         if (current_file < 3)
             DrawFileEditor(title.c_str(), save, is_xbox);
-        else
+        else if (current_file == 3)
             DrawINIEditor(title.c_str(), ini, is_xbox);
+        else
+            DrawConfigINIEditor(title.c_str(), config);
     }
 }
 
@@ -321,7 +323,7 @@ void UndertaleGUI::DrawINIEditor(const char *title, UndertaleCommon::UndertaleIN
         
         ImGui::InputInt("BW", &ini->general.BW);
         ImGui::SameLine();
-        HelpMarker("The amount of times you had Won before the last True Reset.\nUsed for unlocking the Dynamic borders");
+        HelpMarker("The amount of times you had Won before the last True Reset.\nUsed for unlocking the Dynamic borders.");
        
         ImGui::InputInt("BC", &ini->general.BC);
         ImGui::SameLine();
@@ -329,7 +331,7 @@ void UndertaleGUI::DrawINIEditor(const char *title, UndertaleCommon::UndertaleIN
         
         ImGui::Checkbox("Tale", &ini->general.Tale);
         ImGui::SameLine();
-        HelpMarker("Listened to the monsters tale in New Home");
+        HelpMarker("Listened to the monsters tale in New Home.");
         ImGui::SameLine();
        
         ImGui::Checkbox("CP", &ini->general.CP);
@@ -382,7 +384,7 @@ void UndertaleGUI::DrawINIEditor(const char *title, UndertaleCommon::UndertaleIN
 
         ImGui::InputInt("EX", &ini->flowey.EX);
         ImGui::SameLine();
-        HelpMarker("How many times you've heard Flowey's post-neutral dialogue");
+        HelpMarker("How many times you've heard Flowey's post-neutral dialogue.");
 
         ImGui::InputInt("CHANGE", &ini->flowey.CHANGE);
         ImGui::SameLine();
@@ -406,7 +408,7 @@ void UndertaleGUI::DrawINIEditor(const char *title, UndertaleCommon::UndertaleIN
         
         ImGui::Checkbox("K", &ini->flowey.K);
         ImGui::SameLine();
-        HelpMarker("Killed Flowey");
+        HelpMarker("Killed Flowey.");
         ImGui::SameLine();
 
         ImGui::Checkbox("NK", &ini->flowey.NK);
@@ -416,17 +418,17 @@ void UndertaleGUI::DrawINIEditor(const char *title, UndertaleCommon::UndertaleIN
 
         ImGui::Checkbox("IK", &ini->flowey.IK);
         ImGui::SameLine();
-        HelpMarker("Spared Flowey during a neutral-with-EXP route");
+        HelpMarker("Spared Flowey during a neutral-with-EXP route.");
         ImGui::SameLine();
 
         ImGui::Checkbox("SK", &ini->flowey.SK);
         ImGui::SameLine();
-        HelpMarker("Asgore commited suicide");
+        HelpMarker("Asgore commited suicide.");
         ImGui::SameLine();
 
         ImGui::Checkbox("FloweyExplain1", &ini->flowey.FloweyExplain1);
         ImGui::SameLine();
-        HelpMarker("Spared Toriel after Killing her, or vice-versa");
+        HelpMarker("Spared Toriel after Killing her, or vice-versa.");
         
         ImGui::Checkbox("AK", &ini->flowey.AK);
         ImGui::SameLine();
@@ -630,6 +632,39 @@ void UndertaleGUI::DrawINIEditor(const char *title, UndertaleCommon::UndertaleIN
         HelpMarker("Donated to the Dog Casino.\nUnlocks the Casino border.");
     }
     ImGui::End();
+}
+
+void UndertaleGUI::DrawConfigINIEditor(const char * title, UndertaleCommon::UndertaleConfigINI * config)
+{
+    ImGui::SeparatorText("General");
+    const char * languages[2] = {"English", "Japanese"};
+    const char * lang[2] = {"en", "ja"};
+    int selected_language = 0;
+    for (int i = 0; i < IM_ARRAYSIZE(lang); i++)
+    {
+        if (config->general.lang == lang[i])
+        {
+            selected_language = i;
+        }
+    }
+    selected_language = DrawCombo("LANGUAGE", languages, IM_ARRAYSIZE(languages), selected_language);
+    config->general.lang = lang[selected_language];
+
+    const char * borders[15] = {"NONE", "Simple", "Sepia", "Dynamic", "Ruins", "Snowdin", "Waterfall", "Hotland", "Castle", "True lab", "Beauty", "Real/Not Real", "Super Dog, Hoi", "Casino", "UNKNOWN"};
+    int selected_border = (config->general.sb > 13 ? 14 : config->general.sb);
+    selected_border = DrawCombo("BORDER", borders, IM_ARRAYSIZE(borders) - 1, selected_border);
+    config->general.sb = selected_border;
+
+    ImGui::SeparatorText("joypad1");
+    ImGui::InputInt("CONFIRM", &config->joypad1.b0);
+    ImGui::InputInt("CANCEL", &config->joypad1.b1);
+    ImGui::InputInt("MENU", &config->joypad1.b2);
+    ImGui::InputDouble("ANALOG SENSITIVITY", &config->joypad1.as);
+
+    const char * joy_dir[3] = {"NORMAL", "ANALOG ONLY", "POV ONLY"};
+    int selected_joy = config->joypad1.jd;
+    selected_joy = DrawCombo("DIR CHOICE", joy_dir, IM_ARRAYSIZE(joy_dir), selected_joy);
+    config->joypad1.jd = selected_joy;
 }
 
 // kill me

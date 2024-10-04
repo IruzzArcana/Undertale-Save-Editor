@@ -12,6 +12,7 @@ bool UndertaleApp::is_xbox = false;
 const char * UndertaleCommon::title = "Undertale Save Editor";
 UndertaleCommon::UndertaleSaveFile UndertaleApp::save[3]{};
 UndertaleCommon::UndertaleINI UndertaleApp::ini{};
+UndertaleCommon::UndertaleConfigINI UndertaleApp::config{};
 bool UndertaleApp::show_editor = false;
 UndertaleApp::UndertaleApp()
 {
@@ -95,7 +96,7 @@ void UndertaleApp::Render()
     
     UndertaleGUI::DrawMenuBar(true, save, save[0].initialized);
     UndertaleGUI::DrawAboutPage(UndertaleGUI::ShowAboutPage());
-    UndertaleGUI::DrawSaveEditor(show_editor, &save[UndertaleGUI::GetFile()], &ini, is_xbox);
+    UndertaleGUI::DrawSaveEditor(show_editor, &save[UndertaleGUI::GetFile()], &ini, &config, is_xbox);
 
     ImGui::EndFrame();
     ImGui::Render();
@@ -116,11 +117,11 @@ void UndertaleApp::Loop()
         switch (UndertaleGUI::ShowFileDialog())
         {
             case UndertaleGUI::FILE_LOAD:
-                UndertaleSave::Load(window, save, &ini, is_xbox);
+                UndertaleSave::Load(window, save, &ini, &config, is_xbox);
                 break;
             case UndertaleGUI::FILE_SAVE:
             case UndertaleGUI::FILE_SAVE_AS:
-                UndertaleSave::Save(window, save, &ini, is_xbox, UndertaleGUI::ShowFileDialog() == UndertaleGUI::FILE_SAVE_AS);
+                UndertaleSave::Save(window, save, &ini, &config, is_xbox, UndertaleGUI::ShowFileDialog() == UndertaleGUI::FILE_SAVE_AS);
                 break;
         }
         UndertaleGUI::HideFileDialog();

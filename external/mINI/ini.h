@@ -894,21 +894,28 @@ namespace mINI
 			{
 				data.clear();
 			}
-			if (filename.empty() && filebuffer->str().empty())
+			if (filename.empty())
 			{
 				return false;
 			}
-			if (!filename.empty())
-			{
-				INIReader reader(filename);
-				return reader >> data;
-			}
-			else
-			{
-				INIReader reader(*filebuffer);
-				return reader >> data;
-			}
+			INIReader reader(filename);
+			return reader >> data;
 		}
+		
+		bool readbuffer(INIStructure& data) const
+		{
+			if (data.size())
+			{
+				data.clear();
+			}
+			if (filebuffer->str().empty())
+			{
+				return false;
+			}
+			INIReader reader(*filebuffer);
+			return reader >> data;
+		}
+
 		bool generate(INIStructure const& data, bool pretty = false) const
 		{
 			if (filename.empty())

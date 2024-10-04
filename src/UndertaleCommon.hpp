@@ -154,6 +154,7 @@ class UndertaleCommon
         };
         struct UndertaleINI
         {
+            bool initialized;
             UndertaleINIGeneral general;
             UndertaleINIReset reset;
             UndertaleINIFlowey flowey;
@@ -170,6 +171,24 @@ class UndertaleCommon
             UndertaleINIF7 f7;
             UndertaleINIEndF endf;
             UndertaleINIDogshrine dogshrine;
+        };
+        struct UndertaleConfigINIGeneral
+        {
+            std::string lang;
+            int sb;
+        };
+        struct UndertaleConfigINIjoypad1
+        {
+            int b0;
+            int b1;
+            int b2;
+            double as;
+            int jd;
+        };
+        struct UndertaleConfigINI
+        {
+            UndertaleConfigINIGeneral general;
+            UndertaleConfigINIjoypad1 joypad1;
         };
         static const char * title;
 };
