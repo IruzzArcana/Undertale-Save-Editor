@@ -107,6 +107,7 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
 
 void UndertaleSave::ConsoleLoad(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI *ini, UndertaleCommon::UndertaleConfigINI *config, bool &is_xbox)
 {
+    int num_lines = 0;
     NFD::Guard nfdGuard;
     NFD::UniquePath outPath;
     nfdfilteritem_t filterItems[1] = {{"Console Save", "sav"}};
@@ -121,7 +122,6 @@ void UndertaleSave::ConsoleLoad(SDL_Window *window, UndertaleCommon::UndertaleSa
 
         dir = filepath.string();
         std::ifstream jsonfile(dir);
-        int num_lines;
 
         if (!jsonfile.is_open())
         {
