@@ -18,7 +18,7 @@ class UndertaleGUI
             FILE_SAVE_AS_SAV
         };
 
-        static void DrawMenuBar(bool enabled, UndertaleCommon::UndertaleSaveFile save[3], int mode);
+        static void DrawMenuBar(bool enabled, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI * ini, UndertaleCommon::UndertaleConfigINI *config, int mode);
         static void DrawAboutPage(bool enabled);
         static void DrawSaveEditor(bool enalbed, UndertaleCommon::UndertaleSaveFile * save, UndertaleCommon::UndertaleINI * ini, UndertaleCommon::UndertaleConfigINI *config, bool is_xbox);
         static bool Quit() { return quit; };

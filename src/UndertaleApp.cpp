@@ -94,7 +94,7 @@ void UndertaleApp::Render()
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
     
-    UndertaleGUI::DrawMenuBar(true, save, save[0].initialized);
+    UndertaleGUI::DrawMenuBar(true, save, &ini, &config, save[0].initialized);
     UndertaleGUI::DrawAboutPage(UndertaleGUI::ShowAboutPage());
     UndertaleGUI::DrawSaveEditor(show_editor, &save[UndertaleGUI::GetFile()], &ini, &config, is_xbox);
 

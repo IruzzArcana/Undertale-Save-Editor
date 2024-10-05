@@ -7,7 +7,7 @@ int UndertaleGUI::current_file = 0;
 bool UndertaleGUI::show_about_page = false;
 int UndertaleGUI::show_file_dialog = FILE_NONE;
 
-void UndertaleGUI::DrawMenuBar(bool enabled, UndertaleCommon::UndertaleSaveFile save[3], int mode)
+void UndertaleGUI::DrawMenuBar(bool enabled, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI * ini, UndertaleCommon::UndertaleConfigINI *config, int mode)
 {
     if (enabled)
     {
@@ -59,11 +59,11 @@ void UndertaleGUI::DrawMenuBar(bool enabled, UndertaleCommon::UndertaleSaveFile 
                     {
                         current_file = 2;
                     }
-                    if (ImGui::MenuItem("undertale.ini", 0, current_file == 3))
+                    if (ini->initialized && ImGui::MenuItem("undertale.ini", 0, current_file == 3))
                     {
                         current_file = 3;
                     }
-                    if (ImGui::MenuItem("config.ini", 0, current_file == 4))
+                    if (config->initialized && ImGui::MenuItem("config.ini", 0, current_file == 4))
                     {
                         current_file = 4;
                     }
