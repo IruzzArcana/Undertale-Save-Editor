@@ -6,6 +6,7 @@
 #include "UndertaleSave.hpp"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_sdlrenderer2.h"
+#include "font.cpp"
 
 bool UndertaleApp::is_running = false;
 bool UndertaleApp::is_xbox = false;
@@ -57,10 +58,21 @@ void UndertaleApp::Init()
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 
-    io = &ImGui::GetIO(); (void)*io;
+    io = &ImGui::GetIO();
     io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     io->IniFilename = NULL;
+
+    static ImVector<ImWchar> ranges;
+    ImFontGlyphRangesBuilder builder;
+
+    builder.AddRanges(ImGui::GetIO().Fonts->GetGlyphRangesDefault());
+    builder.AddRanges(ImGui::GetIO().Fonts->GetGlyphRangesCyrillic());
+    builder.AddRanges(ImGui::GetIO().Fonts->GetGlyphRangesJapanese());
+
+    builder.BuildRanges(&ranges);
+
+    io->Fonts->AddFontFromMemoryCompressedTTF(&font_compressed_data, font_compressed_size, 16, NULL, ranges.Data);
     
     ImGui::StyleColorsDark();
     ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
