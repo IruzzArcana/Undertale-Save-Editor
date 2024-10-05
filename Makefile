@@ -1,5 +1,5 @@
 RELEASE = ON
-CFLAGS := -Iexternal/SDL2/include -Iexternal/SDL2_image/include -Iexternal/imgui -Iexternal/imgui/backends -Iexternal/imgui/misc/cpp -Iexternal/NFDe/include -Iexternal/json -Iexternal/mINI
+CFLAGS := -Iexternal/SDL2/include -Iexternal/SDL2_image/include -Iexternal/imgui -Iexternal/imgui/backends -Iexternal/imgui/misc/cpp -Iexternal/imgui/misc/font -Iexternal/NFDe/include -Iexternal/json -Iexternal/mINI
 LDFLAGS := -Lexternal/SDL2/lib -Lexternal/SDL2_image/lib -static -Wall -lmingw32 -lSDL2main -lSDL2 external/SDL2/lib/libSDL2.a -lSDL2_image -mwindows  -Wl,--dynamicbase -Wl,--nxcompat -Wl,--high-entropy-va -lm -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lsetupapi -lversion -luuid
 ifeq ($(RELEASE), ON)
 	LDFLAGS += -Wl,-subsystem,windows
