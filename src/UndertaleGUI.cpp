@@ -689,9 +689,6 @@ void UndertaleGUI::DrawConfigINIEditor(const char * title, UndertaleCommon::Unde
 // kill me
 int UndertaleGUI::DrawCombo(const char *label, const char *state[], int size, int selected_state, int index_override[], int index_size)
 {
-    if (selected_state < 0 || selected_state > size)
-        selected_state = 0;
-
     int selected = selected_state;
     if (index_size > 0)
     {
@@ -704,6 +701,10 @@ int UndertaleGUI::DrawCombo(const char *label, const char *state[], int size, in
             }
         }
     }
+    
+    if (selected < 0 || selected > size)
+        selected = 0;
+
     if (ImGui::BeginCombo(label, state[selected]))
     {
         for (int i = 0; i < size; i++)
