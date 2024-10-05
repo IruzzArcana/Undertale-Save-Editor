@@ -669,7 +669,7 @@ void UndertaleGUI::DrawConfigINIEditor(const char * title, UndertaleCommon::Unde
 
     const char * borders[14] = {"NONE", "Simple", "Sepia", "Dynamic", "Ruins", "Snowdin", "Waterfall", "Hotland", "Castle", "True lab", "Beauty", "Real/Not Real", "Super Dog, Hoi", "Casino"};
     int selected_border = config->general.sb;
-    selected_border = DrawCombo("BORDER", borders, IM_ARRAYSIZE(borders) - 1, selected_border);
+    selected_border = DrawCombo("BORDER", borders, IM_ARRAYSIZE(borders), selected_border);
     config->general.sb = selected_border;
 
     ImGui::SeparatorText("joypad1");
@@ -701,7 +701,7 @@ int UndertaleGUI::DrawCombo(const char *label, const char *state[], int size, in
             }
         }
     }
-    
+
     if (selected < 0 || selected > size)
         selected = 0;
 
