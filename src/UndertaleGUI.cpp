@@ -507,7 +507,7 @@ void UndertaleGUI::DrawINIEditor(const char *title, UndertaleCommon::UndertaleIN
         ImGui::SameLine();
         HelpMarker("The number of times you've fought Sans in a Genocide route.");
 
-        ImGui::InputInt("F", &ini->sans.MP);
+        ImGui::InputInt("MP", &ini->sans.MP);
         ImGui::SameLine();
         HelpMarker("The number of times you've reached the \"midpoint\" of\nSans' fight in a Genocide Route.");
         
