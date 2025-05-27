@@ -191,6 +191,7 @@ class UndertaleCommon
             UndertaleConfigINIGeneral general;
             UndertaleConfigINIjoypad1 joypad1;
         };
-        static const char * title;
+        static inline const char * gTitle = "Undertale Save Editor";
+        static inline std::string title = gTitle;
 };
 #endif

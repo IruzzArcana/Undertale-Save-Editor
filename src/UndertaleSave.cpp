@@ -9,13 +9,17 @@
 
 using json = nlohmann::json;
 namespace fs = std::filesystem;
-std::string UndertaleSave::dir;
-bool UndertaleSave::is_json = false;
-nlohmann::json UndertaleSave::jsondata;
-mINI::INIStructure UndertaleSave::inidata;
-mINI::INIStructure UndertaleSave::configinidata;
 
-void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI *ini, UndertaleCommon::UndertaleConfigINI *config, bool &is_xbox)
+UndertaleSave::UndertaleSave(SDL_Window *window, std::string& title, UndertaleCommon::UndertaleSaveFile (&save)[3], UndertaleCommon::UndertaleINI *ini, UndertaleCommon::UndertaleConfigINI *config, bool &is_xbox) : 
+window(window),
+title(title),
+save(save),
+ini(ini), 
+config(config), 
+is_xbox(is_xbox)
+{}
+
+void UndertaleSave::Load()
 {
     int num_lines = 0;
     NFD::Guard nfdGuard;
@@ -23,6 +27,9 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
     nfdresult_t result = NFD::PickFolder(outPath);
     if (result == NFD_OKAY)
     {
+        for (int i = 0; i < 3; i++)
+            save[i].initialized = false;
+
         inidata.clear();
         configinidata.clear();
         fs::path filepath = outPath.get();
@@ -102,10 +109,11 @@ void UndertaleSave::Load(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
             configfile.read(configinidata);
             ConfigINIFileToStruct(config);
         }
+        title = std::string(UndertaleCommon::gTitle) + " - " + dir;
     }
 }
 
-void UndertaleSave::ConsoleLoad(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI *ini, UndertaleCommon::UndertaleConfigINI *config, bool &is_xbox)
+void UndertaleSave::ConsoleLoad()
 {
     int num_lines = 0;
     NFD::Guard nfdGuard;
@@ -114,6 +122,9 @@ void UndertaleSave::ConsoleLoad(SDL_Window *window, UndertaleCommon::UndertaleSa
     nfdresult_t result = NFD::OpenDialog(outPath, filterItems, 1);
     if (result == NFD_OKAY)
     {
+        for (int i = 0; i < 3; i++)
+            save[i].initialized = false;
+            
         inidata.clear();
         configinidata.clear();
         fs::path filepath = outPath.get();
@@ -173,6 +184,7 @@ void UndertaleSave::ConsoleLoad(SDL_Window *window, UndertaleCommon::UndertaleSa
                 configfile.readbuffer(configinidata);
                 ConfigINIFileToStruct(config);
             }
+            title = std::string(UndertaleCommon::gTitle) + " - " + dir;
         }
         catch (const std::exception &e)
         {
@@ -182,7 +194,7 @@ void UndertaleSave::ConsoleLoad(SDL_Window *window, UndertaleCommon::UndertaleSa
     }
 }
 
-void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI *ini, UndertaleCommon::UndertaleConfigINI *config, bool is_xbox, bool save_as)
+void UndertaleSave::Save(bool save_as)
 {
     std::string files[3] = {"file0", "file9", "file8"};
     fs::path filepath;
@@ -273,9 +285,11 @@ void UndertaleSave::Save(SDL_Window *window, UndertaleCommon::UndertaleSaveFile 
         outfile << jsondata;
         outfile.close();
     }
+    
+    title = std::string(UndertaleCommon::gTitle) + " - " + dir;
 }
 
-void UndertaleSave::ConsoleSave(SDL_Window *window, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI *ini, UndertaleCommon::UndertaleConfigINI *config, bool is_xbox)
+void UndertaleSave::ConsoleSave()
 {
     std::string files[3] = {"file0", "file9", "file8"};
     fs::path filepath;
@@ -290,9 +304,8 @@ void UndertaleSave::ConsoleSave(SDL_Window *window, UndertaleCommon::UndertaleSa
         std::string fileext = filepath.extension().string();
         is_json = true;
         dir = filepath.string();
-        Save(window, save, ini, config, is_xbox, false);
+        Save();
     }
-
 }
 
 int UndertaleSave::FileToStruct(std::string path, UndertaleCommon::UndertaleSaveFile *save, bool is_xbox)

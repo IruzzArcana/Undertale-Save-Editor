@@ -8,13 +8,9 @@
 #include "imgui_impl_sdlrenderer2.h"
 #include "font.cpp"
 
-bool UndertaleApp::is_running = false;
-bool UndertaleApp::is_xbox = false;
-const char * UndertaleCommon::title = "Undertale Save Editor";
-UndertaleCommon::UndertaleSaveFile UndertaleApp::save[3]{};
-UndertaleCommon::UndertaleINI UndertaleApp::ini{};
-UndertaleCommon::UndertaleConfigINI UndertaleApp::config{};
-bool UndertaleApp::show_editor = false;
+UndertaleSave * Save = nullptr;
+UndertaleGUI * GUI = nullptr;
+
 UndertaleApp::UndertaleApp()
 {
     Init();
@@ -33,7 +29,7 @@ void UndertaleApp::Init()
         return;
     }
 
-    window = SDL_CreateWindow(UndertaleCommon::title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+    window = SDL_CreateWindow(UndertaleCommon::title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     if (window == nullptr)
     {
         std::cout << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
@@ -77,7 +73,8 @@ void UndertaleApp::Init()
     ImGui::StyleColorsDark();
     ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
     ImGui_ImplSDLRenderer2_Init(renderer);   
-
+    Save = new UndertaleSave(window, UndertaleCommon::title, save, &ini, &config, is_xbox);
+    GUI = new UndertaleGUI(save, &ini, &config, is_xbox);
     is_running = true;
 }
 
@@ -105,10 +102,8 @@ void UndertaleApp::Render()
     ImGui_ImplSDLRenderer2_NewFrame();
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
-    
-    UndertaleGUI::DrawMenuBar(true, save, &ini, &config, save[0].initialized);
-    UndertaleGUI::DrawAboutPage(UndertaleGUI::ShowAboutPage());
-    UndertaleGUI::DrawSaveEditor(show_editor, &save[UndertaleGUI::GetFile()], &ini, &config, is_xbox);
+
+    GUI->DrawGUI(true);
 
     ImGui::EndFrame();
     ImGui::Render();
@@ -123,32 +118,31 @@ void UndertaleApp::Render()
 
 void UndertaleApp::Loop()
 {
-    show_editor = save[0].initialized;
-    if (UndertaleGUI::ShowFileDialog() > UndertaleGUI::FILE_NONE)
+    GUI->ManageState();
+    if (GUI->ShowFileDialog() > GUI->FILE_NONE)
     {
-        switch (UndertaleGUI::ShowFileDialog())
+        switch (GUI->ShowFileDialog())
         {
             case UndertaleGUI::FILE_LOAD:
-                UndertaleSave::Load(window, save, &ini, &config, is_xbox);
+                Save->Load();
                 break;
             case UndertaleGUI::FILE_LOAD_SAV:
-                UndertaleSave::ConsoleLoad(window, save, &ini, &config, is_xbox);
+                Save->ConsoleLoad();
                 break;
             case UndertaleGUI::FILE_SAVE:
             case UndertaleGUI::FILE_SAVE_AS:
-                UndertaleSave::Save(window, save, &ini, &config, is_xbox, UndertaleGUI::ShowFileDialog() == UndertaleGUI::FILE_SAVE_AS);
+                Save->Save(GUI->ShowFileDialog() == UndertaleGUI::FILE_SAVE_AS);
                 break;
             case UndertaleGUI::FILE_SAVE_AS_SAV:
-                UndertaleSave::ConsoleSave(window, save, &ini, &config, is_xbox);
+                Save->ConsoleSave();
                 break;
         }
-        UndertaleGUI::HideFileDialog();
+        GUI->HideFileDialog();
     }
+    SDL_SetWindowTitle(window, UndertaleCommon::title.c_str());
 
-    if (UndertaleGUI::Quit())
-    {
+    if (GUI->Quit())
         is_running = false;
-    }
 }
 
 void UndertaleApp::Destroy()
@@ -156,6 +150,11 @@ void UndertaleApp::Destroy()
     ImGui_ImplSDLRenderer2_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
+    
+    delete GUI;
+    GUI = nullptr;
+    delete Save;
+    Save = nullptr;
 
     SDL_FreeSurface(background);
     SDL_DestroyRenderer(renderer);

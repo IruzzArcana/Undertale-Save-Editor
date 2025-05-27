@@ -2,12 +2,41 @@
 #include "imgui.h"
 #include "imgui_stdlib.h"
 
-bool UndertaleGUI::quit = false;
-int UndertaleGUI::current_file = 0;
-bool UndertaleGUI::show_about_page = false;
-int UndertaleGUI::show_file_dialog = FILE_NONE;
+UndertaleGUI::UndertaleGUI(UndertaleCommon::UndertaleSaveFile (&save)[3], UndertaleCommon::UndertaleINI * ini, UndertaleCommon::UndertaleConfigINI *config, bool& is_xbox) : 
+save(save),
+ini(ini),
+config(config),
+is_xbox(is_xbox)
+{}
 
-void UndertaleGUI::DrawMenuBar(bool enabled, UndertaleCommon::UndertaleSaveFile save[3], UndertaleCommon::UndertaleINI * ini, UndertaleCommon::UndertaleConfigINI *config, int mode)
+void UndertaleGUI::DrawGUI(bool enabled)
+{
+    if (enabled)
+    {
+        DrawMenuBar(true);
+        if (state.show_about_page)
+            DrawAboutPage(true);
+        if (state.mode > SHOW_NONE)
+        {
+            if (save[state.current_file].initialized)
+                DrawSaveEditor(true, &save[state.current_file]);
+            else
+                state.current_file = 0;
+        }
+    }
+}
+
+void UndertaleGUI::ManageState()
+{
+    state.show_file0 = save[0].initialized;
+    state.show_file9 = save[1].initialized;
+    state.show_file8 = save[2].initialized;
+    state.show_ini = ini->initialized;
+    state.show_configini = config->initialized;
+    state.mode = state.show_file0;
+}
+
+void UndertaleGUI::DrawMenuBar(bool enabled)
 {
     if (enabled)
     {
@@ -17,63 +46,57 @@ void UndertaleGUI::DrawMenuBar(bool enabled, UndertaleCommon::UndertaleSaveFile 
             {
                 if (ImGui::MenuItem("Open (PC Save)"))
                 {
-                    show_file_dialog = FILE_LOAD;
+                    state.show_file_dialog = FILE_LOAD;
                 }
                 if (ImGui::MenuItem("Open (Console Save)"))
                 {
-                    show_file_dialog = FILE_LOAD_SAV;
+                    state.show_file_dialog = FILE_LOAD_SAV;
                 }
                 ImGui::Separator();
-                if (ImGui::MenuItem("Save", "", false, mode > SHOW_NONE))
+                if (ImGui::MenuItem("Save", "", false, state.mode > SHOW_NONE))
                 {
-                    show_file_dialog = FILE_SAVE;
+                    state.show_file_dialog = FILE_SAVE;
                 }
-                if (ImGui::MenuItem("Save As... (PC Save)", "", false, mode > SHOW_NONE))
+                if (ImGui::MenuItem("Save As... (PC Save)", "", false, state.mode > SHOW_NONE))
                 {
-                    show_file_dialog = FILE_SAVE_AS;
+                    state.show_file_dialog = FILE_SAVE_AS;
                 }
-                if (ImGui::MenuItem("Save As... (Console Save)", "", false, mode > SHOW_NONE))
+                if (ImGui::MenuItem("Save As... (Console Save)", "", false, state.mode > SHOW_NONE))
                 {
-                    show_file_dialog = FILE_SAVE_AS_SAV;
+                    state.show_file_dialog = FILE_SAVE_AS_SAV;
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Quit", "Alt+F4"))
                 {
-                    quit = true;
+                    state.quit = true;
                 }
                 ImGui::EndMenu();
             }
-            if (mode == SHOW_UNDERTALE)
+            if (state.mode == SHOW_UNDERTALE)
             {
                 if (ImGui::BeginMenu("Editor"))
                 {
-                    if (ImGui::MenuItem("file0", 0, current_file == 0))
-                    {
-                        current_file = 0;
-                    }
-                    if (save[1].initialized && ImGui::MenuItem("file9", 0, current_file == 1))
-                    {
-                        current_file = 1;
-                    }
-                    if (save[2].initialized && ImGui::MenuItem("file8", 0, current_file == 2))
-                    {
-                        current_file = 2;
-                    }
-                    if (ini->initialized && ImGui::MenuItem("undertale.ini", 0, current_file == 3))
-                    {
-                        current_file = 3;
-                    }
-                    if (config->initialized && ImGui::MenuItem("config.ini", 0, current_file == 4))
-                    {
-                        current_file = 4;
-                    }
+                    if (ImGui::MenuItem("file0", 0, state.current_file == 0))
+                        state.current_file = 0;
+                    
+                    if (state.show_file9 && ImGui::MenuItem("file9", 0, state.current_file == 1))
+                        state.current_file = 1;
+                    
+                    if (state.show_file8 && ImGui::MenuItem("file8", 0, state.current_file == 2))
+                        state.current_file = 2;
+                    
+                    if (state.show_ini && ImGui::MenuItem("undertale.ini", 0, state.current_file == 3))
+                        state.current_file = 3;
+                    
+                    if (state.show_configini && ImGui::MenuItem("config.ini", 0, state.current_file == 4))
+                        state.current_file = 4;
 
                     ImGui::EndMenu();
                 }
             }
             if (ImGui::MenuItem("About"))
             {
-                show_about_page = true;
+                state.show_about_page = true;
             }
             ImGui::EndMainMenuBar();
         }
@@ -86,19 +109,19 @@ void UndertaleGUI::DrawAboutPage(bool enabled)
     {
         ImVec2 center = ImGui::GetMainViewport()->GetCenter();
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-        ImGui::Begin("About", &show_about_page, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-        ImGui::Text(UndertaleCommon::title);
-        ImGui::Text("v1.0.1");
+        ImGui::Begin("About", &state.show_about_page, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+        ImGui::Text(UndertaleCommon::gTitle);
+        ImGui::Text("v1.0.2");
         ImGui::End();
     }
 }
 
-void UndertaleGUI::DrawSaveEditor(bool enabled, UndertaleCommon::UndertaleSaveFile *save, UndertaleCommon::UndertaleINI *ini, UndertaleCommon::UndertaleConfigINI *config, bool is_xbox)
+void UndertaleGUI::DrawSaveEditor(bool enabled, UndertaleCommon::UndertaleSaveFile *save)
 {
     if (enabled)
     {
         std::string title = "Save Editor";
-        switch (current_file)
+        switch (state.current_file)
         {
         case 0:
             title += " - file0";
@@ -116,9 +139,9 @@ void UndertaleGUI::DrawSaveEditor(bool enabled, UndertaleCommon::UndertaleSaveFi
             title += " - config.ini";
             break;
         }
-        if (current_file < 3)
+        if (state.current_file < 3)
             DrawFileEditor(title.c_str(), save, is_xbox);
-        else if (current_file == 3)
+        else if (state.current_file == 3)
             DrawINIEditor(title.c_str(), ini, is_xbox);
         else
             DrawConfigINIEditor(title.c_str(), config);
