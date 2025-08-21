@@ -11,7 +11,7 @@ class UndertaleCommon
     public:
         struct UndertaleSaveFile
         {
-            bool initialized;
+            bool initialized = false;
             std::string name;
             int lv;
             int maxhp;
@@ -154,7 +154,7 @@ class UndertaleCommon
         };
         struct UndertaleINI
         {
-            bool initialized;
+            bool initialized = false;
             UndertaleINIGeneral general;
             UndertaleINIReset reset;
             UndertaleINIFlowey flowey;
@@ -187,7 +187,7 @@ class UndertaleCommon
         };
         struct UndertaleConfigINI
         {
-            bool initialized;
+            bool initialized = false;
             UndertaleConfigINIGeneral general;
             UndertaleConfigINIjoypad1 joypad1;
         };

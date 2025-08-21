@@ -1,3 +1,6 @@
+#ifndef UNDERTALEGUI_HPP
+#define UNDERTALEGUI_HPP
+
 #include "UndertaleCommon.hpp"
 
 class UndertaleGUI
@@ -55,3 +58,4 @@ class UndertaleGUI
         bool& is_xbox;
         state_t state;
 };
+#endif

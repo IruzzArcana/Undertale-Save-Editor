@@ -1,7 +1,13 @@
+#ifndef UNDERTALEAPP_HPP
+#define UNDERTALEAPP_HPP
+
 #include "SDL.h"
 #include "SDL_image.h"
 #include "imgui.h"
 #include "UndertaleCommon.hpp"
+
+#include "UndertaleGUI.hpp"
+#include "UndertaleSave.hpp"
 
 class UndertaleApp
 {
@@ -25,7 +31,10 @@ class UndertaleApp
         UndertaleCommon::UndertaleSaveFile save[3];
         UndertaleCommon::UndertaleINI ini;
         UndertaleCommon::UndertaleConfigINI config;
+        std::unique_ptr<UndertaleSave> Save;
+        std::unique_ptr<UndertaleGUI> GUI;
         bool is_running;
         bool is_xbox;
         bool show_editor;
 };
+#endif

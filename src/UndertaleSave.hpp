@@ -1,3 +1,6 @@
+#ifndef UNDERTALESAVE_HPP
+#define UNDERTALESAVE_HPP
+
 #define MINI_CASE_SENSITIVE
 
 #include "SDL.h"
@@ -49,3 +52,4 @@ class UndertaleSave
         UndertaleCommon::UndertaleConfigINI *config;
         bool &is_xbox;
 };
+#endif

@@ -2,14 +2,9 @@
 #include <Windows.h>
 #include <iostream>
 #include "UndertaleApp.hpp"
-#include "UndertaleGUI.hpp"
-#include "UndertaleSave.hpp"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_sdlrenderer2.h"
 #include "font.cpp"
-
-UndertaleSave * Save = nullptr;
-UndertaleGUI * GUI = nullptr;
 
 UndertaleApp::UndertaleApp()
 {
@@ -72,9 +67,11 @@ void UndertaleApp::Init()
     
     ImGui::StyleColorsDark();
     ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
-    ImGui_ImplSDLRenderer2_Init(renderer);   
-    Save = new UndertaleSave(window, UndertaleCommon::title, save, &ini, &config, is_xbox);
-    GUI = new UndertaleGUI(save, &ini, &config, is_xbox);
+    ImGui_ImplSDLRenderer2_Init(renderer);
+
+    Save = std::make_unique<UndertaleSave>(window, UndertaleCommon::title, save, &ini, &config, is_xbox);
+    GUI = std::make_unique<UndertaleGUI>(save, &ini, &config, is_xbox);
+    
     is_running = true;
 }
 
@@ -150,11 +147,6 @@ void UndertaleApp::Destroy()
     ImGui_ImplSDLRenderer2_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
-    
-    delete GUI;
-    GUI = nullptr;
-    delete Save;
-    Save = nullptr;
 
     SDL_FreeSurface(background);
     SDL_DestroyRenderer(renderer);

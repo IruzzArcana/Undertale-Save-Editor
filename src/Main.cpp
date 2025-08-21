@@ -1,17 +1,16 @@
 #include "UndertaleApp.hpp"
+#include <memory>
 
-UndertaleApp * app = nullptr;
+std::unique_ptr<UndertaleApp> app = nullptr;
 
 int main(int argc, char **argv) 
 {
-    app = new UndertaleApp();
+    app = std::make_unique<UndertaleApp>();
     while (app->IsRunning())
     {
         app->HandleEvents();
         app->Loop();
         app->Render();
     }
-    delete app;
-    app = nullptr;
     return 0;
 }
